@@ -1,0 +1,16 @@
+lshw
+nvme-cli
+hdparm
+fswebcam
+hwinfo
+pciutils
+sudo
+ntpdate
+lftp
+pulseaudio
+pulseaudio-utils
+alsa-utils
+smartmontools
+sg3-utils
+util-linux
+isolinux
