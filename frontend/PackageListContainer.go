@@ -26,7 +26,7 @@ func NewPackageListContainer() *PackageListContainer {
 
 func (plc *PackageListContainer) buildPackageListWidget() *widget.List {
 	maxLen := plc.fm.GetLongestString(plc.fm.GetPackagelist())
-	max_str := strings.Repeat("a", maxLen)
+	max_str := strings.Repeat("a", maxLen) //theres gotta be a better way to dynamically size a list
 	list := widget.NewList(
 		func() int {
 			return len(plc.fm.GetPackagelist())
@@ -46,7 +46,7 @@ func (plc *PackageListContainer) buildPackageListWidget() *widget.List {
 	)
 	list.OnSelected = func(id widget.ListItemID) {
 		fileName := plc.fm.GetPackagelist()[id].Name()
-		text := plc.fm.GetTextFromFile(fileName)
+		text := plc.fm.GetTextFromFile("staticfiles/PackageLists/" + fileName)
 		plc.fileView.SetText(text)
 	}
 	list.OnUnselected = func(id widget.ListItemID) {
@@ -55,10 +55,16 @@ func (plc *PackageListContainer) buildPackageListWidget() *widget.List {
 	return list
 }
 
+func (plc *PackageListContainer) buildFileContentView() *container.Scroll {
+	contentView := container.NewScroll(plc.fileView)
+	//contentView.Resize(fyne.NewSize(200, 400))
+	contentView.SetMinSize(fyne.NewSize(200, 400))
+	return contentView
+}
+
 func (plc *PackageListContainer) GetContainer() fyne.CanvasObject {
 	list := plc.buildPackageListWidget()
-
-	hsplit := container.NewHSplit(list, container.NewCenter(plc.fileView))
+	hsplit := container.NewHSplit(list, plc.buildFileContentView())
 	hsplit.Refresh()
 	return hsplit
 }

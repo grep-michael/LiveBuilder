@@ -4,8 +4,6 @@ live-config-systemd
 systemd-sysv
 linux-image-amd64
 linux-headers-amd64
-wpasupplicant
-network-manager
 firmware-amd-graphics
 firmware-ast
 firmware-ath9k-htc

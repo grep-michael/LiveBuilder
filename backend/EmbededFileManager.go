@@ -63,7 +63,6 @@ func (app *EmbeddedFileManager) GetLongestString(list []fs.DirEntry) int {
 }
 
 func (app *EmbeddedFileManager) GetTextFromFile(fileName string) string {
-	fmt.Println(fileName)
 	content, err := fs.ReadFile(embeddedFS, fileName)
 	if err != nil {
 		return err.Error()
