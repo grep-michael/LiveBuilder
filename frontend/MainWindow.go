@@ -29,6 +29,7 @@ func NewMainWindow(title string) *MainWindow {
 func (self *MainWindow) BuildMainContent() {
 	file_selector := buildFileSelectionView()
 	tabs := container.NewAppTabs(
+		container.NewTabItem("lb config Editor", buildLBConfigView()),
 		container.NewTabItem("File Selection", file_selector),
 	)
 	self.SetContent(tabs)

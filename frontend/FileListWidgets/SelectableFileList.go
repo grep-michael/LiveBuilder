@@ -1,6 +1,7 @@
 package filelistwidgets
 
 import (
+	appstate "LiveBuilder/AppState"
 	filesystem "LiveBuilder/Filesystem"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -17,8 +18,9 @@ type FileListContainer struct {
 
 func NewFileListContainer(filesystem_identifier string) *FileListContainer {
 	fm := filesystem.GetFileManager()
+	selectFileMap := appstate.GetGlobalState().GetDirectoryEntryMap(filesystem_identifier)
 	return &FileListContainer{
-		selectedFiles:    make(map[string]filesystem.DirectoryEntry),
+		selectedFiles:    selectFileMap,
 		fileManager:      fm,
 		directoryEntries: fm.GetFileSystem(filesystem_identifier),
 		fileView:         widget.NewLabel("Select An Item From The List"),

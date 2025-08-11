@@ -1,17 +1,16 @@
 package filesystem
 
 import (
-	//"embed"
-	//"fmt"
 	"log"
 	"path/filepath"
 	"sync"
 )
 
 const (
-	APPNAME        = "LiveBuidler"
-	PACKAGE_DIR_ID = "PackageLists"
-	SCRIPTS_DIR_ID = "Scripts"
+	APPNAME              = "LiveBuidler"
+	PACKAGE_DIR_ID       = "PackageLists"
+	CUSTOMFILES_DIR_ID   = "CustomFiles"
+	LBCONFIG_TEMPLATE_ID = "lbconfig_template.template"
 )
 
 var lock = &sync.Mutex{}
@@ -53,9 +52,9 @@ func (self *FileManager) buildFilesystemMap() {
 	package_path := filepath.Join(self.GetAppDataDir(), PACKAGE_DIR_ID)
 	log.Printf("Packages path: %s\n", package_path)
 	self.fileSystems[PACKAGE_DIR_ID], _ = ScanDirectory(package_path)
-	scripts_path := filepath.Join(self.GetAppDataDir(), SCRIPTS_DIR_ID)
+	scripts_path := filepath.Join(self.GetAppDataDir(), CUSTOMFILES_DIR_ID)
 	log.Printf("Scripts path: %s\n", scripts_path)
-	self.fileSystems[SCRIPTS_DIR_ID], _ = ScanDirectory(scripts_path)
+	self.fileSystems[CUSTOMFILES_DIR_ID], _ = ScanDirectory(scripts_path)
 }
 func (self *FileManager) GetFileSystem(fs_identifier string) []DirectoryEntry {
 	return self.fileSystems[fs_identifier]
