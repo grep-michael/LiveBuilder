@@ -2,10 +2,7 @@ package main
 
 import (
 	filesystem "LiveBuilder/Filesystem"
-	filelistwidgets "LiveBuilder/frontend/FileListWidgets"
-	"fmt"
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
+	frontend "LiveBuilder/frontend"
 	"log"
 	"os"
 )
@@ -28,22 +25,8 @@ func main() {
 	defer LOGFILE.Close()
 	configureLogging()
 	log.Println("App Start")
-	plc := filelistwidgets.NewFileListContainer(filesystem.PACKAGE_DIR_ID)
 
-	myApp := app.New()
-	myWindow := myApp.NewWindow("test window")
-	//
-	cnt := plc.GetContainer()
-	fmt.Println(cnt.Size())
-	myWindow.SetContent(cnt)
-	//
-	windowPadding := fyne.NewSize(30, 60)
-	windowSize := fyne.NewSize(
-		cnt.Size().Width+windowPadding.Width,
-		cnt.Size().Height+windowPadding.Height,
-	)
+	mainWindow := frontend.NewMainWindow("Live Builder")
+	mainWindow.ShowAndRun()
 
-	myWindow.Resize(windowSize)
-
-	myWindow.ShowAndRun()
 }
