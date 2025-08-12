@@ -3,8 +3,10 @@ package frontend
 import (
 	//appstate "LiveBuilder/AppState"
 	filesystem "LiveBuilder/Filesystem"
+	buildwindow "LiveBuilder/frontend/BuildWindow"
 	filelistwidgets "LiveBuilder/frontend/FileListWidgets"
 	livebuildconfig "LiveBuilder/frontend/LiveBuildConfig"
+
 	//"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -22,7 +24,10 @@ func buildFileSelectionView() *fyne.Container {
 }
 
 func buildLBConfigView() *fyne.Container {
-
 	return livebuildconfig.NewlbTextEdit()
 
+}
+
+func buildBuildWindow(window fyne.Window) *fyne.Container {
+	return buildwindow.NewBuildWindow(window)
 }

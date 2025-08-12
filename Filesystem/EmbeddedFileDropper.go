@@ -61,8 +61,9 @@ func GetAppDataDir() (string, error) {
 		}
 		baseDir = filepath.Join(homeDir, "."+APPNAME)
 	}
-
-	return filepath.Join(baseDir, APPNAME), nil
+	dir := filepath.Join(baseDir, APPNAME)
+	os.MkdirAll(dir, 0777)
+	return dir, nil
 }
 
 // extractEmbeddedFiles extracts all embedded files to the target directory

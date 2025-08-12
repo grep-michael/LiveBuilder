@@ -10,8 +10,8 @@ var lock = &sync.Mutex{}
 type selectedFileMap map[string]filesystem.DirectoryEntry
 
 type State struct {
-	selectedPackages map[string]selectedFileMap
-	LBConfigCMD      string
+	selectedFiles map[string]selectedFileMap
+	LBConfigCMD   string
 }
 
 var globalState *State
@@ -22,7 +22,7 @@ func GetGlobalState() *State {
 		defer lock.Unlock()
 		if globalState == nil {
 			globalState = &State{
-				selectedPackages: make(map[string]selectedFileMap),
+				selectedFiles: make(map[string]selectedFileMap),
 			}
 		}
 	}
@@ -30,10 +30,10 @@ func GetGlobalState() *State {
 }
 
 func (state *State) GetDirectoryEntryMap(identifier string) selectedFileMap {
-	fileMap, ok := state.selectedPackages[identifier]
+	fileMap, ok := state.selectedFiles[identifier]
 	if !ok {
 		fileMap = make(selectedFileMap)
-		state.selectedPackages[identifier] = fileMap
+		state.selectedFiles[identifier] = fileMap
 	}
-	return state.selectedPackages[identifier]
+	return state.selectedFiles[identifier]
 }

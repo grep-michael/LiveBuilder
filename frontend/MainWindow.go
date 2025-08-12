@@ -4,6 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	//"fyne.io/fyne/v2/theme"
 )
 
 // MainWindow wraps fyne.Window with custom functionality
@@ -15,6 +16,7 @@ type MainWindow struct {
 
 func NewMainWindow(title string) *MainWindow {
 	myApp := app.New()
+	//myApp.Settings().SetTheme(theme.DarkTheme())
 	myWindow := myApp.NewWindow(title)
 
 	mw := &MainWindow{
@@ -27,10 +29,10 @@ func NewMainWindow(title string) *MainWindow {
 }
 
 func (self *MainWindow) BuildMainContent() {
-	file_selector := buildFileSelectionView()
 	tabs := container.NewAppTabs(
 		container.NewTabItem("lb config Editor", buildLBConfigView()),
-		container.NewTabItem("File Selection", file_selector),
+		container.NewTabItem("File Selection", buildFileSelectionView()),
+		container.NewTabItem("Build", buildBuildWindow(self.window)),
 	)
 	self.SetContent(tabs)
 }

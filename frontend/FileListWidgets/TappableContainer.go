@@ -64,6 +64,8 @@ func (self *FileListItem) getFileContents() string {
 func (self *FileListItem) Tapped(_ *fyne.PointEvent) {
 	// Regular tap - show file content
 	text := self.getFileContents()
+
+	self.fileListContainer.fileViewHeader.SetText(self.fileEntry.FullPath())
 	self.fileListContainer.fileView.SetText(text)
 }
 

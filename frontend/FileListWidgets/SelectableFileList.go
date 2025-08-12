@@ -3,6 +3,7 @@ package filelistwidgets
 import (
 	appstate "LiveBuilder/AppState"
 	filesystem "LiveBuilder/Filesystem"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -13,6 +14,7 @@ type FileListContainer struct {
 	fileManager      *filesystem.FileManager
 	directoryEntries []filesystem.DirectoryEntry
 	fileView         *widget.Label
+	fileViewHeader   *widget.Label
 	list             *widget.List
 }
 
@@ -23,10 +25,10 @@ func NewFileListContainer(filesystem_identifier string) *FileListContainer {
 		selectedFiles:    selectFileMap,
 		fileManager:      fm,
 		directoryEntries: fm.GetFileSystem(filesystem_identifier),
-		fileView:         widget.NewLabel("Select An Item From The List"),
+		fileView:         widget.NewLabel(""),
+		fileViewHeader:   widget.NewLabel("Select An Item From The List"),
 	}
 }
-
 func (self *FileListContainer) isFileSelected(fileEntry filesystem.DirectoryEntry) bool {
 	_, ok := self.selectedFiles[fileEntry.Name()]
 	return ok
@@ -79,10 +81,22 @@ func (self *FileListContainer) buildFileList() *widget.List {
 	self.list = list
 	return list
 }
-func (self *FileListContainer) buildFileContentView() *container.Scroll {
-	contentView := container.NewScroll(self.fileView)
-	contentView.SetMinSize(fyne.NewSize(200, 400))
-	return contentView
+func (self *FileListContainer) buildFileContentView() *container.Split {
+	scroll := container.NewScroll(self.fileView)
+	scroll.SetMinSize(fyne.NewSize(200, 400))
+
+	vbox := container.NewVSplit(
+		self.fileViewHeader,
+		scroll,
+	)
+
+	// Set the split to give minimal space to the top (header)
+	headerHeight := self.fileViewHeader.MinSize().Height
+	totalHeight := headerHeight + 400 // approximate total
+	offset := float64(headerHeight) / float64(totalHeight)
+	vbox.SetOffset(offset)
+
+	return vbox
 }
 func (self *FileListContainer) GetContainer() fyne.CanvasObject {
 	list := self.buildFileList()
