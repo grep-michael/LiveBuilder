@@ -18,10 +18,10 @@ type LBConfigData struct {
 
 func NewlbConfig() *LBConfigData {
 	return &LBConfigData{
-		ISOVolume:      "Default Volume",
-		ISOPublisher:   "Default Publisher",
-		ISOApplication: "Default Application",
-		ISOImageName:   "Default Name",
+		ISOVolume:      "DefaultVolume",
+		ISOPublisher:   "DefaultPublisher",
+		ISOApplication: "DefaultApplication",
+		ISOImageName:   "DefaultName",
 	}
 }
 

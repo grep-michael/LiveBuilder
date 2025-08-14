@@ -2,19 +2,21 @@ package buildwindow
 
 import (
 	execution "LiveBuilder/Execution"
-	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"log"
+	"strings"
 )
 
 type BuildWindow struct {
 	window            fyne.Window
 	buildPath         string
 	selectedPathLabel *widget.Label
-	buildLogLabel     *widget.Label
+	buildLogText      *widget.RichText
+	logContent        strings.Builder
+	logScroll         *container.Scroll
 	livebuilder       *execution.LiveBuilder
 }
 
@@ -22,9 +24,16 @@ func NewBuildWindow(window fyne.Window) *fyne.Container {
 	build_window := BuildWindow{
 		window:            window,
 		selectedPathLabel: widget.NewLabel("Select folder"),
-		buildLogLabel:     widget.NewLabel("Build Log will be here"),
 	}
-	build_window.livebuilder = execution.NewLiveBuilder(build_window.buildLogLabel)
+	build_window.buildLogText = widget.NewRichTextFromMarkdown("Build Log will appear here...")
+	build_window.buildLogText.Wrapping = fyne.TextWrapWord
+
+	build_window.logScroll = container.NewScroll(build_window.buildLogText)
+	build_window.logScroll.SetMinSize(fyne.NewSize(600, 400))
+
+	build_window.livebuilder = execution.NewLiveBuilder()
+
+	go build_window.startLogSubscriber()
 
 	filesectionHeader := build_window.buildFolderSelectionHeader()
 	buildArea := build_window.buildMainBuildArea()
@@ -51,25 +60,51 @@ func (self *BuildWindow) buildFolderSelectionHeader() *fyne.Container {
 
 	return hbox
 }
+func (self *BuildWindow) startLogSubscriber() {
+	subscriber := self.livebuilder.GetSubscriber()
+
+	for update := range subscriber {
+		if update.Append {
+			self.logContent.WriteString(update.Message)
+			self.logContent.WriteString("\n")
+		} else {
+			self.logContent.Reset()
+			self.logContent.WriteString(update.Message)
+		}
+		fyne.Do(func() {
+			self.buildLogText.ParseMarkdown(self.logContent.String())
+			self.logScroll.ScrollToBottom()
+		})
+	}
+}
 func (self *BuildWindow) buildMainBuildArea() *fyne.Container {
 	buildButton := widget.NewButton("Execute Live Build", func() {
-		self.buildLogLabel.SetText("Building...")
-		go func() {
-			err := self.livebuilder.ConfigureLB()
-			if err != nil {
-				fmt.Println("build Error")
-				fmt.Println(err)
-				self.buildLogLabel.SetText("Error: " + err.Error())
-			} else {
-				self.buildLogLabel.SetText("Configure finished")
-			}
+		self.logContent.Reset()
+		self.buildLogText.ParseMarkdown("Building...")
 
+		go func() {
+			log.Println("NukeBuild")
+			self.livebuilder.NukeBuild()
+			log.Println("ConfigureLB")
+			self.livebuilder.ConfigureLB()
+			log.Println("DropPackages")
+			self.livebuilder.DropPackages()
+			log.Println("DropSplashImages")
+			self.livebuilder.DropSplashImages()
+			log.Println("DropCustomFiles")
+			self.livebuilder.DropCustomFiles()
+			log.Println("BuildLB")
+			self.livebuilder.BuildLB()
+			self.logContent.Reset()
+			log.Println("all building done, display final message")
+
+			fyne.DoAndWait(func() {
+				self.buildLogText.ParseMarkdown("Build Completed")
+			})
 		}()
 	})
 
-	scroll := container.NewScroll(self.buildLogLabel)
-	scroll.SetMinSize(fyne.NewSize(200, 400))
-	hbox := container.NewVBox(buildButton, scroll)
+	hbox := container.NewVBox(buildButton, self.logScroll)
 
 	return hbox
 }

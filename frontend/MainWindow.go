@@ -33,6 +33,7 @@ func (self *MainWindow) BuildMainContent() {
 		container.NewTabItem("lb config Editor", buildLBConfigView()),
 		container.NewTabItem("File Selection", buildFileSelectionView()),
 		container.NewTabItem("Build", buildBuildWindow(self.window)),
+		container.NewTabItem("Export/edit", buildAppConfigView()),
 	)
 	self.SetContent(tabs)
 }

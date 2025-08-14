@@ -31,3 +31,7 @@ func buildLBConfigView() *fyne.Container {
 func buildBuildWindow(window fyne.Window) *fyne.Container {
 	return buildwindow.NewBuildWindow(window)
 }
+
+func buildAppConfigView() *fyne.Container {
+	return &fyne.Container{}
+}
