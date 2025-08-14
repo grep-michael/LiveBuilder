@@ -1,7 +1,7 @@
 package buildwindow
 
 import (
-	execution "LiveBuilder/Execution"
+	buildmanager "LiveBuilder/BuildManager"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -17,7 +17,8 @@ type BuildWindow struct {
 	buildLogText      *widget.RichText
 	logContent        strings.Builder
 	logScroll         *container.Scroll
-	livebuilder       *execution.LiveBuilder
+	//livebuilder       *execution.LiveBuilder
+	buildManager *buildmanager.BuildManager
 }
 
 func NewBuildWindow(window fyne.Window) *fyne.Container {
@@ -31,7 +32,7 @@ func NewBuildWindow(window fyne.Window) *fyne.Container {
 	build_window.logScroll = container.NewScroll(build_window.buildLogText)
 	build_window.logScroll.SetMinSize(fyne.NewSize(600, 400))
 
-	build_window.livebuilder = execution.NewLiveBuilder()
+	build_window.buildManager = buildmanager.NewBuilder()
 
 	go build_window.startLogSubscriber()
 
@@ -52,7 +53,7 @@ func (self *BuildWindow) buildFolderSelectionHeader() *fyne.Container {
 			}
 			folderPath := folder.Path()
 			self.selectedPathLabel.SetText("Selected: " + folderPath)
-			self.livebuilder.SetWorkingDir(folderPath)
+			self.buildPath = folderPath
 		}, self.window)
 	})
 
@@ -61,7 +62,7 @@ func (self *BuildWindow) buildFolderSelectionHeader() *fyne.Container {
 	return hbox
 }
 func (self *BuildWindow) startLogSubscriber() {
-	subscriber := self.livebuilder.GetSubscriber()
+	subscriber := self.buildManager.GetSubscriber()
 
 	for update := range subscriber {
 		if update.Append {
@@ -83,24 +84,12 @@ func (self *BuildWindow) buildMainBuildArea() *fyne.Container {
 		self.buildLogText.ParseMarkdown("Building...")
 
 		go func() {
-			log.Println("NukeBuild")
-			self.livebuilder.NukeBuild()
-			log.Println("ConfigureLB")
-			self.livebuilder.ConfigureLB()
-			log.Println("DropPackages")
-			self.livebuilder.DropPackages()
-			log.Println("DropSplashImages")
-			self.livebuilder.DropSplashImages()
-			log.Println("DropCustomFiles")
-			self.livebuilder.DropCustomFiles()
-			log.Println("BuildLB")
-			self.livebuilder.BuildLB()
-			self.logContent.Reset()
+			self.buildManager.Build(self.buildPath)
 			log.Println("all building done, display final message")
 
-			fyne.DoAndWait(func() {
-				self.buildLogText.ParseMarkdown("Build Completed")
-			})
+			//fyne.DoAndWait(func() {
+			//	self.buildLogText.ParseMarkdown("Build Completed")
+			//})
 		}()
 	})
 

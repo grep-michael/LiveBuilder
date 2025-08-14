@@ -36,7 +36,7 @@ func (self *Importer) ImportAll() error {
 	}
 	self.updateChannel <- LogUpdate{
 		Append:     false,
-		Message:    "Starting custom file import\n",
+		Message:    "Starting file import\n\n",
 		UpdateType: START,
 	}
 	// fancy shit
@@ -55,7 +55,7 @@ func (self *Importer) ImportAll() error {
 		}
 	}
 	self.updateChannel <- LogUpdate{
-		Append:     false,
+		Append:     true,
 		Message:    "Importing finished\n",
 		UpdateType: END,
 	}
@@ -64,7 +64,7 @@ func (self *Importer) ImportAll() error {
 
 func (self *Importer) DropPackages() error {
 	self.updateChannel <- LogUpdate{
-		Append:     false,
+		Append:     true,
 		Message:    "Dropping Packages\n",
 		UpdateType: UPDATE,
 	}
@@ -103,7 +103,7 @@ func (self *Importer) DropPackages() error {
 
 func (self *Importer) DropSplashImages() error {
 	self.updateChannel <- LogUpdate{
-		Append:     false,
+		Append:     true,
 		Message:    "Dropping Splash images\n",
 		UpdateType: UPDATE,
 	}
@@ -141,7 +141,7 @@ func (self *Importer) DropSplashImages() error {
 
 func (self *Importer) DropCustomFiles() error {
 	self.updateChannel <- LogUpdate{
-		Append:     false,
+		Append:     true,
 		Message:    "Dropping Custom Files\n",
 		UpdateType: UPDATE,
 	}
