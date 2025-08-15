@@ -7,6 +7,11 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+# Add this permissions section
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   build:
     strategy:
