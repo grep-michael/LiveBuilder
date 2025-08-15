@@ -24,10 +24,6 @@ jobs:
             goos: darwin
             goarch: arm64
             name: LiveBuilder-darwin-arm64
-          - os: windows-latest
-            goos: windows
-            goarch: amd64
-            name: LiveBuilder-windows-amd64.exe
 
     runs-on: ${{ matrix.os }}
 
