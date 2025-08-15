@@ -1,0 +1,8 @@
+{
+  "install_path": "config/package-lists/live.list.chroot",
+  "tags": [
+    "basic"
+  ],
+  "description": "Configuration file",
+  "file_type": "config"
+}

@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 type FileMetadata struct {
@@ -14,8 +13,6 @@ type FileMetadata struct {
 	Tags        []string `json:"tags"`
 	Description string   `json:"description"`
 	FileType    string   `json:"file_type"`
-	CreatedAt   string   `json:"created_at"`
-	Version     string   `json:"version,omitempty"`
 }
 
 // LoadFileMetadata loads metadata from a sidecar .meta.json file
@@ -44,9 +41,6 @@ func LoadFileMetadata(filePath string) (FileMetadata, error) {
 			}
 			if existingMeta.FileType == "" {
 				existingMeta.FileType = defaults.FileType
-			}
-			if existingMeta.CreatedAt == "" {
-				existingMeta.CreatedAt = defaults.CreatedAt
 			}
 
 			// Save only if we added missing fields
@@ -89,11 +83,10 @@ func SaveFileMetadata(filePath string, meta FileMetadata) error {
 // getDefaultMetadata returns a standard set of default values
 func getDefaultMetadata() FileMetadata {
 	return FileMetadata{
-		InstallPath: "/tmp/",
-		Tags:        []string{"config"},
-		Description: "Configuration file",
-		FileType:    "config",
-		CreatedAt:   time.Now().Format(time.RFC3339),
+		InstallPath: ".",
+		Tags:        []string{""},
+		Description: "",
+		FileType:    "",
 	}
 }
 
@@ -140,31 +133,4 @@ func FilterFilesByTag(filesWithMeta map[string]FileMetadata, tags ...string) map
 	}
 
 	return filtered
-}
-
-// Example usage and helper functions
-func main() {
-	// Example usage
-	testFiles := []string{
-		"trixie_archives.cfg",
-		"bookworm_main.list",
-		"custom_hook.sh",
-		"my_service.service",
-		"packages_base.txt",
-	}
-
-	for _, file := range testFiles {
-		fmt.Printf("Loading metadata for: %s\n", file)
-		meta, err := LoadFileMetadata(file)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			continue
-		}
-
-		fmt.Printf("  Install Path: %s\n", meta.InstallPath)
-		fmt.Printf("  Tags: %v\n", meta.Tags)
-		fmt.Printf("  Description: %s\n", meta.Description)
-		fmt.Printf("  File Type: %s\n", meta.FileType)
-		fmt.Printf("  Created: %s\n\n", meta.CreatedAt)
-	}
 }

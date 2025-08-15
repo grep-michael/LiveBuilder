@@ -1,0 +1,8 @@
+{
+  "install_path": "config/hooks/normal/0000-configure-apt.hook.chroot",
+  "tags": [
+    "fixes"
+  ],
+  "description": "configures apt for more debugging",
+  "file_type": ""
+}

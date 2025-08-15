@@ -1,0 +1,8 @@
+{
+  "install_path": "config/hooks/normal/0015-fix-bootloader.hook.chroot",
+  "tags": [
+    "fixes"
+  ],
+  "description": "attempts to fix missing bootloader issues",
+  "file_type": "config"
+}

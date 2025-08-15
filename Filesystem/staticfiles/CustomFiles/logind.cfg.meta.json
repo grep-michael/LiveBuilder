@@ -1,0 +1,8 @@
+{
+  "install_path": "config/includes.chroot/etc/systemd/logind.conf",
+  "tags": [
+    "autostart"
+  ],
+  "description": "loging script to disable screensaver",
+  "file_type": ""
+}

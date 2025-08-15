@@ -1,0 +1,8 @@
+{
+  "install_path": "config/includes.chroot/etc/xdg/lxqt/lxqt-powermanagement.conf",
+  "tags": [
+    "autostart"
+  ],
+  "description": "lxqt powermanagement to disable screen saver",
+  "file_type": ""
+}

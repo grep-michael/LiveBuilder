@@ -1,0 +1,8 @@
+{
+  "install_path": "config/archives/custom.list.chroot",
+  "tags": [
+    "PackageList"
+  ],
+  "description": "package sources for bookworm",
+  "file_type": "config"
+}

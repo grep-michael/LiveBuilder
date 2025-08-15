@@ -1,0 +1,8 @@
+{
+  "install_path": "config/includes.chroot/etc/xdg/autostart/disable-screensaver.desktop",
+  "tags": [
+    "autostart"
+  ],
+  "description": "xdg auto start using xset to disable screen saver",
+  "file_type": ""
+}

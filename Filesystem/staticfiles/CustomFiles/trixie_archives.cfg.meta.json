@@ -1,0 +1,8 @@
+{
+  "install_path": "config/hooks/normal/0001-fix-sources.hook.chroot",
+  "tags": [
+    "fixes"
+  ],
+  "description": "for trixies manually adds apt sources",
+  "file_type": ""
+}
