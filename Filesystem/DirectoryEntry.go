@@ -2,14 +2,17 @@ package filesystem
 
 import (
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type DirectoryEntry struct {
 	name     string
 	fullPath string
 	fileInfo fs.FileInfo
+	MetaData FileMetadata
 }
 
 func (c *DirectoryEntry) Name() string {
@@ -31,14 +34,25 @@ func ScanDirectory(dirPath string) ([]DirectoryEntry, error) {
 	var customEntries []DirectoryEntry
 
 	for _, entry := range entries {
+
+		if strings.HasSuffix(entry.Name(), ".meta.json") {
+			continue
+		}
+
 		customEntry, err := NewCustomDirEntryFromEntry(entry, dirPath)
 		if err != nil {
 			continue
 		}
+		metaData, err := LoadFileMetadata(customEntry.fullPath)
+		if err != nil {
+			log.Printf("Failed to load meta data for file %s, with error %v\n", customEntry.fullPath, err)
+		}
+		customEntry.MetaData = metaData
 		customEntries = append(customEntries, customEntry)
 	}
 
 	return customEntries, nil
+
 }
 
 func NewCustomDirEntryFromEntry(entry fs.DirEntry, basePath string) (DirectoryEntry, error) {

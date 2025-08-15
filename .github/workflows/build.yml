@@ -1,0 +1,95 @@
+name: Build LiveBuilder
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            name: LiveBuilder-linux-amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            name: LiveBuilder-darwin-amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+            name: LiveBuilder-darwin-arm64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            name: LiveBuilder-windows-amd64.exe
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Install Linux dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev xorg-dev
+
+    - name: Build
+      env:
+        CGO_ENABLED: 1
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+      run: |
+        go mod download
+        go build -ldflags="-s -w" -o ${{ matrix.name }}
+
+    - name: Create macOS app bundle
+      if: runner.os == 'macOS'
+      run: |
+        mkdir -p LiveBuilder.app/Contents/MacOS
+        cp ${{ matrix.name }} LiveBuilder.app/Contents/MacOS/LiveBuilder
+        
+        cat > LiveBuilder.app/Contents/Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>LiveBuilder</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.yourcompany.livebuilder</string>
+            <key>CFBundleName</key>
+            <string>LiveBuilder</string>
+            <key>CFBundleVersion</key>
+            <string>1.0.0</string>
+        </dict>
+        </plist>
+        EOF
+        
+        chmod +x LiveBuilder.app/Contents/MacOS/LiveBuilder
+
+    - name: Upload binary
+      if: runner.os != 'macOS'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.name }}
+        path: ${{ matrix.name }}
+
+    - name: Upload macOS app
+      if: runner.os == 'macOS'
+      uses: actions/upload-artifact@v3
+      with:
+        name: LiveBuilder-${{ matrix.goarch }}.app
+        path: LiveBuilder.app/
