@@ -1,114 +1,14 @@
-package buildwindow
-
-import (
-	execution "LiveBuilder/Execution"
-	"fmt"
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/widget"
-	"log"
-	"strings"
-)
-
-type BuildWindow struct {
-	window            fyne.Window
-	buildPath         string
-	selectedPathLabel *widget.Label
-	buildLogEntry     *widget.Entry // Changed from Label to Entry
-	livebuilder       *execution.LiveBuilder
-	logContent        strings.Builder // Buffer for log content
-}
-
-func NewBuildWindow(window fyne.Window) *fyne.Container {
-	// Create multiline entry for build log
-	buildLogEntry := widget.NewMultiLineEntry()
-	buildLogEntry.Disable() // Make it read-only
-	buildLogEntry.SetText("Build Log will appear here...")
-
-	build_window := BuildWindow{
-		window:            window,
-		selectedPathLabel: widget.NewLabel("Select folder"),
-		buildLogEntry:     buildLogEntry,
-	}
-
-	// Create LiveBuilder without passing the label
-	build_window.livebuilder = execution.NewLiveBuilder()
-
-	// Start log subscriber
-	go build_window.startLogSubscriber()
-
-	filesectionHeader := build_window.buildFolderSelectionHeader()
-	buildArea := build_window.buildMainBuildArea()
-	return container.NewBorder(filesectionHeader, nil, nil, nil, buildArea)
-}
-
-// startLogSubscriber handles log updates from LiveBuilder
-func (self *BuildWindow) startLogSubscriber() {
-	subscriber := self.livebuilder.GetSubscriber()
-
-	for update := range subscriber {
-		if update.Append {
-			self.logContent.WriteString(update.Message)
-		} else {
-			// Replace content
-			self.logContent.Reset()
-			self.logContent.WriteString(update.Message)
-		}
-
-		// Update the entry text on the UI thread
-		self.buildLogEntry.SetText(self.logContent.String())
-
-		// Auto-scroll to bottom
-		self.buildLogEntry.CursorRow = len(strings.Split(self.logContent.String(), "\n"))
-	}
-}
-
-func (self *BuildWindow) buildFolderSelectionHeader() *fyne.Container {
-	choose_folder_btn := widget.NewButton("Choose Build Location", func() {
-		dialog.ShowFolderOpen(func(folder fyne.ListableURI, err error) {
-			if err != nil {
-				log.Println("Error selecting folder:", err)
-				return
-			}
-			if folder == nil {
-				return
-			}
-			folderPath := folder.Path()
-			self.selectedPathLabel.SetText("Selected: " + folderPath)
-			self.livebuilder.SetWorkingDir(folderPath)
-		}, self.window)
-	})
-
-	hbox := container.NewVBox(choose_folder_btn, self.selectedPathLabel)
-	return hbox
-}
-
-func (self *BuildWindow) buildMainBuildArea() *fyne.Container {
-	buildButton := widget.NewButton("Execute Live Build", func() {
-		// Clear log and start build process
-		self.logContent.Reset()
-		self.buildLogEntry.SetText("Building...")
-
-		go func() {
-			self.livebuilder.NukeBuild()
-
-			err := self.livebuilder.ConfigureLB()
-			if err != nil {
-				fmt.Println("build Error:", err)
-				// Error will be logged through the subscriber
-			}
-
-			self.livebuilder.DropPackages()
-			self.livebuilder.DropCustomFiles()
-			self.livebuilder.BuildLB()
-		}()
-	})
-
-	// Create scrollable container for the entry
-	scroll := container.NewScroll(self.buildLogEntry)
-	scroll.SetMinSize(fyne.NewSize(600, 400))
-
-	hbox := container.NewVBox(buildButton, scroll)
-	return hbox
-}
+lb config --apt apt \
+  --distribution trixie \
+  --archive-areas "main contrib non-free non-free-firmware" \
+  --apt-options "--no-install-recommends --yes" \
+  --iso-volume "DefaultVolume" \
+  --iso-publisher "DefaultPublisher" \
+  --iso-application "DefaultApplication" \
+  --debootstrap-options "--variant=minbase" \
+  --bootappend-live "boot=live components hostname=live-host username=root toram" \
+  --binary-images "iso-hybrid" \
+  --bootloaders "syslinux,grub-efi" \
+  --image-name "DefaultName" \
+  --architectures amd64 \
+  --uefi-secure-boot enable

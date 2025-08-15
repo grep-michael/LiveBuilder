@@ -10,7 +10,7 @@ Master object for doing all the backend building
 import (
 	filesystem "LiveBuilder/Filesystem"
 	"fmt"
-	//"log"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -67,8 +67,9 @@ func (self *BuildManager) Build(buildPath string) {
 		}
 		return
 	}
-
+	log.Printf("Building to path: %s\n", self.buildPath)
 	go self.listenForUpdates()
+
 	self.importer.SetBuildPath(self.buildPath)
 	self.lbconfigManager.SetBuildPath(self.buildPath)
 	self.lbBuildManager.SetBuildPath(self.buildPath)
@@ -94,7 +95,6 @@ func (self *BuildManager) Build(buildPath string) {
 		}
 		return
 	}
-
 }
 
 func (self *BuildManager) GetSubscriber() <-chan LogUpdate {
@@ -125,6 +125,7 @@ func (self *BuildManager) InitializeBuildPath(buildPath string) error {
 	} else {
 		self.buildPath = buildPath
 	}
+
 	if err := self.NukeBuild(); err != nil {
 		return err
 	}

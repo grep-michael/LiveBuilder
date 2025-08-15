@@ -36,7 +36,6 @@ func GetFileManager() *FileManager {
 	}
 	return globalInstance
 }
-
 func (self *FileManager) InializeFilesystem() {
 	appDir, err := GetAppDataDir()
 	if err != nil {
@@ -48,7 +47,6 @@ func (self *FileManager) InializeFilesystem() {
 	}
 	self.buildFilesystemMap()
 }
-
 func (self *FileManager) buildFilesystemMap() {
 	//var err error
 
@@ -68,11 +66,9 @@ func (self *FileManager) buildFilesystemMap() {
 func (self *FileManager) GetFileSystem(fs_identifier string) []DirectoryEntry {
 	return self.fileSystems[fs_identifier]
 }
-
 func (self *FileManager) GetAppDataDir() string {
 	return self.appDriectory
 }
-
 func (self *FileManager) GetCompareFileNameLengths(_filesystem []DirectoryEntry, compare func(string, string) bool) string {
 
 	if len(_filesystem) == 0 {

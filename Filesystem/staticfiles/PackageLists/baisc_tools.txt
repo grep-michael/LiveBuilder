@@ -5,7 +5,7 @@ fswebcam
 hwinfo
 pciutils
 sudo
-ntpdate
+#ntpdate
 lftp
 pulseaudio
 pulseaudio-utils

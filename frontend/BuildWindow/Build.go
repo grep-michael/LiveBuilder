@@ -72,7 +72,7 @@ func (self *BuildWindow) startLogSubscriber() {
 			self.logContent.Reset()
 			self.logContent.WriteString(update.Message)
 		}
-		fyne.Do(func() {
+		fyne.DoAndWait(func() {
 			self.buildLogText.ParseMarkdown(self.logContent.String())
 			self.logScroll.ScrollToBottom()
 		})
@@ -90,6 +90,7 @@ func (self *BuildWindow) buildMainBuildArea() *fyne.Container {
 			//fyne.DoAndWait(func() {
 			//	self.buildLogText.ParseMarkdown("Build Completed")
 			//})
+			self.logContent.Reset()
 		}()
 	})
 

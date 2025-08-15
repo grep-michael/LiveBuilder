@@ -38,7 +38,7 @@ func (self *LBBuildManager) Build() error {
 
 	build_command := self.makeBuildCommand()
 
-	cmdOutChan := make(chan CommandOut, 100)
+	cmdOutChan := make(chan CommandOut, 20)
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -81,5 +81,6 @@ func (self *LBBuildManager) transformToLogUpdate(cmdout CommandOut) LogUpdate {
 
 func (self *LBBuildManager) makeBuildCommand() *exec.Cmd {
 	cmd := exec.Command("lb", []string{"build", "--verbose", "--debug"}...)
+	cmd.Dir = self.buildPath
 	return cmd
 }

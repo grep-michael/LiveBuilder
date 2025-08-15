@@ -4,6 +4,9 @@ live-config-systemd
 systemd-sysv
 linux-image-amd64
 linux-headers-amd64
+xserver-xorg-video-all
+xserver-xorg-input-all
+mesa-utils
 firmware-amd-graphics
 firmware-ast
 firmware-ath9k-htc
@@ -13,8 +16,8 @@ firmware-bnx2x
 firmware-brcm80211
 firmware-cavium
 firmware-intel-sound
-firmware-ipw2x00
-firmware-ivtv
+#firmware-ipw2x00
+#firmware-ivtv
 firmware-iwlwifi
 firmware-libertas
 firmware-linux
@@ -27,8 +30,9 @@ firmware-netxen
 firmware-nvidia-tesla-535-gsp
 firmware-qlogic
 firmware-realtek
-firmware-realtek-rtl8723cs-bt
+#firmware-realtek-rtl8723cs-bt
 firmware-siano
 firmware-sof-signed
-firmware-tomu
+#firmware-tomu
 firmware-zd1211
+firmware-misc-nonfree
