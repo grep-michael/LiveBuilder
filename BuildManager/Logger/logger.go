@@ -1,44 +1,37 @@
 package logger
 
 import (
-	"image/color"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/theme"
-
 	"fyne.io/fyne/v2/widget"
+	"image/color"
 )
 
-// LogView is a custom widget for displaying lots of logs
 type LogView struct {
 	widget.BaseWidget
-	lines   []string
-	max     int
-	lineH   float32
-	bgColor color.Color
-	fgColor color.Color
+	lines []string
+	max   int
+	lineH float32
 }
 
 func NewLogView(maxLines int) *LogView {
 	l := &LogView{
-		lines:   []string{},
-		max:     maxLines,
-		lineH:   16, // px per line (tweak based on font size)
-		bgColor: theme.Color(theme.ColorNameInputBackground),
-		fgColor: theme.Color(theme.ColorNameInputBorder),
+		lines: []string{},
+		max:   maxLines,
+		lineH: float32(theme.TextSize()) + 4, // spacing per line
 	}
 	l.ExtendBaseWidget(l)
 	return l
 }
 
 func (l *LogView) Clear() {
-	l.lines = []string{}
+	l.lines = l.lines[:0]
 	l.Refresh()
 }
 
 // Append a new log line
-func (l *LogView) AddLine(line string) {
+func (l *LogView) AppendLine(line string) {
 	if len(l.lines) >= l.max {
 		copy(l.lines, l.lines[1:])
 		l.lines[len(l.lines)-1] = line
@@ -50,15 +43,13 @@ func (l *LogView) AddLine(line string) {
 
 // Implement fyne.WidgetRenderer
 func (l *LogView) CreateRenderer() fyne.WidgetRenderer {
-	bg := canvas.NewRectangle(l.bgColor)
-	objects := []fyne.CanvasObject{bg}
-	return &logRenderer{log: l, bg: bg, objects: objects}
+	bg := canvas.NewRectangle(theme.Color(theme.ColorNameBackground))
+	return &logRenderer{log: l, bg: bg}
 }
 
 type logRenderer struct {
-	log     *LogView
-	bg      *canvas.Rectangle
-	objects []fyne.CanvasObject
+	log *LogView
+	bg  *canvas.Rectangle
 }
 
 func (r *logRenderer) Layout(size fyne.Size) {
@@ -66,24 +57,41 @@ func (r *logRenderer) Layout(size fyne.Size) {
 }
 
 func (r *logRenderer) MinSize() fyne.Size {
-	return fyne.NewSize(200, 200)
+	// Width grows with longest line, height grows with number of lines
+	width := float32(200)
+	for _, line := range r.log.lines {
+		w := fyne.MeasureText(line, theme.TextSize(), fyne.TextStyle{}).Width
+		if w > width {
+			width = w
+		}
+	}
+	height := float32(len(r.log.lines)) * r.log.lineH
+	return fyne.NewSize(width+8, height)
 }
 
 func (r *logRenderer) Refresh() {
-	r.objects = r.objects[:1] // keep bg only
-
-	// draw visible lines
+	// Rebuild all objects: background + text lines
+	objects := []fyne.CanvasObject{r.bg}
 	y := float32(0)
 	for _, line := range r.log.lines {
-		txt := canvas.NewText(line, r.log.fgColor)
-		txt.TextSize = 14
+		txt := canvas.NewText(line, theme.Color(theme.ColorNameForeground))
+		txt.TextSize = theme.TextSize()
+		txt.TextStyle = fyne.TextStyle{Monospace: true}
 		txt.Move(fyne.NewPos(4, y))
 		y += r.log.lineH
-		r.objects = append(r.objects, txt)
+		objects = append(objects, txt)
 	}
+	r.bg.FillColor = theme.Color(theme.ColorNameBackground)
+	r.bg.Refresh()
 	canvas.Refresh(r.log)
+	// Replace renderer’s object list
+	rObjs := make([]fyne.CanvasObject, len(objects))
+	copy(rObjs, objects)
+	rObjects[r.log] = rObjs
 }
 
-func (r *logRenderer) BackgroundColor() color.Color { return r.log.bgColor }
-func (r *logRenderer) Objects() []fyne.CanvasObject { return r.objects }
+var rObjects = make(map[*LogView][]fyne.CanvasObject)
+
+func (r *logRenderer) BackgroundColor() color.Color { return theme.Color(theme.ColorNameBackground) }
+func (r *logRenderer) Objects() []fyne.CanvasObject { return rObjects[r.log] }
 func (r *logRenderer) Destroy()                     {}

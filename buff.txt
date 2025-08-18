@@ -1,7 +1,7 @@
 lb config --apt apt \
   --distribution trixie \
   --archive-areas "main contrib non-free non-free-firmware" \
-  --apt-options "--no-install-recommends --yes" \
+  --apt-options "--yes" \
   --iso-volume "DefaultVolume" \
   --iso-publisher "DefaultPublisher" \
   --iso-application "DefaultApplication" \
