@@ -49,6 +49,7 @@ func NewBuilder() *BuildManager {
 	builder.importer = NewImporter(builder.updateChannel)
 	builder.lbconfigManager = NewLBConfigManager(builder.updateChannel)
 	builder.lbBuildManager = NewLBBuildManager(builder.updateChannel)
+	go builder.listenForUpdates()
 	return builder
 }
 
@@ -68,8 +69,6 @@ func (self *BuildManager) Build(buildPath string) {
 		return
 	}
 	log.Printf("Building to path: %s\n", self.buildPath)
-	go self.listenForUpdates()
-	defer self.resetListener()
 	self.importer.SetBuildPath(self.buildPath)
 	self.lbconfigManager.SetBuildPath(self.buildPath)
 	self.lbBuildManager.SetBuildPath(self.buildPath)
@@ -117,10 +116,6 @@ func (self *BuildManager) listenForUpdates() {
 		}
 		self.subMutex.RUnlock()
 	}
-}
-func (self *BuildManager) resetListener() {
-	close(self.updateChannel)
-	self.updateChannel = make(chan LogUpdate, 100)
 }
 
 func (self *BuildManager) InitializeBuildPath(buildPath string) error {
