@@ -124,6 +124,7 @@ func (self *Importer) dropFileFromDirectoryEntry(file filesystem.DirectoryEntry)
 	if _, err := io.Copy(outFile, inFile); err != nil {
 		return err
 	}
+	outFile.WriteString("\n")
 
 	msg := fmt.Sprintf("Added %s file to %s\n", file.Name(), file.MetaData.InstallPath)
 	self.updateChannel <- LogUpdate{
