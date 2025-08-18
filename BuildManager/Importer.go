@@ -7,7 +7,6 @@ Imports (Drops/copies) selected files/customizations into the config directory o
 import (
 	appstate "LiveBuilder/AppState"
 	filesystem "LiveBuilder/Filesystem"
-	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -70,33 +69,8 @@ func (self *Importer) DropPackages() error {
 	}
 	packageMap := appstate.GetGlobalState().GetDirectoryEntryMap(filesystem.PACKAGE_DIR_ID)
 
-	outfile_path := filepath.Join(self.buildPath, "config/package-lists/live.list.chroot")
-	outFile, err := os.OpenFile(outfile_path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	defer outFile.Close()
-	if err != nil {
-		return err
-	}
-
 	for _, value := range packageMap {
-		inFile, err := os.Open(value.FullPath())
-		defer inFile.Close()
-		if err != nil {
-			return err
-		}
-		_, err = io.Copy(outFile, inFile)
-		if err != nil {
-			return err
-		}
-		_, err = outFile.WriteString("\n")
-		if err != nil {
-			return err
-		}
-		msg := fmt.Sprintf("Added %s package to config/package-lists/live.list.chroot\n", value.Name())
-		self.updateChannel <- LogUpdate{
-			Append:     true,
-			Message:    msg,
-			UpdateType: UPDATE,
-		}
+		self.dropFileFromDirectoryEntry(value)
 	}
 	return nil
 }
@@ -110,31 +84,7 @@ func (self *Importer) DropSplashImages() error {
 	log.Println("Dropping Splash images")
 	splashMap := filesystem.GetFileManager().GetFileSystem(filesystem.SPLASH_SCREENS_ID)
 	for _, value := range splashMap {
-		inFile, err := os.Open(value.FullPath())
-		defer inFile.Close()
-		if err != nil {
-			return err
-		}
-
-		outfile_path := filepath.Join(self.buildPath, "config/includes.binary/isolinux", value.Name())
-		os.MkdirAll(filepath.Dir(outfile_path), 0777)
-		outFile, err := os.OpenFile(outfile_path, os.O_CREATE|os.O_WRONLY, 0644)
-		defer outFile.Close()
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(outFile, inFile)
-		if err != nil {
-			return err
-		}
-		msg := fmt.Sprintf("Added %s splash to %s\n", value.Name(), outfile_path)
-		log.Println(msg)
-		self.updateChannel <- LogUpdate{
-			Append:     true,
-			Message:    msg,
-			UpdateType: UPDATE,
-		}
+		self.dropFileFromDirectoryEntry(value)
 	}
 	return nil
 }
@@ -148,36 +98,39 @@ func (self *Importer) DropCustomFiles() error {
 	customFileMap := appstate.GetGlobalState().GetDirectoryEntryMap(filesystem.CUSTOMFILES_DIR_ID)
 
 	for _, value := range customFileMap {
-		inFile, err := os.Open(value.FullPath())
-		defer inFile.Close()
-		if err != nil {
-			return err
-		}
-
-		scanner := bufio.NewScanner(inFile)
-		var outfileIdentifier string
-		if scanner.Scan() {
-			outfileIdentifier = scanner.Text()
-		}
-
-		outfile_path := filepath.Join(self.buildPath, outfileIdentifier)
-		os.MkdirAll(filepath.Dir(outfile_path), 0777)
-		outFile, err := os.OpenFile(outfile_path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		defer outFile.Close()
-		if err != nil {
-			return err
-		}
-
-		for scanner.Scan() {
-			outFile.WriteString(scanner.Text() + "\n")
-		}
-
-		msg := fmt.Sprintf("Added %s file to %s\n", value.Name(), outfile_path)
-		self.updateChannel <- LogUpdate{
-			Append:     true,
-			Message:    msg,
-			UpdateType: UPDATE,
-		}
+		self.dropFileFromDirectoryEntry(value)
 	}
+	return nil
+}
+
+func (self *Importer) dropFileFromDirectoryEntry(file filesystem.DirectoryEntry) error {
+	var inFile, outFile *os.File
+	var err error
+
+	outFilePath := filepath.Join(self.buildPath, file.MetaData.InstallPath)
+	inFIlePath := file.FullPath()
+
+	if inFile, err = os.Open(inFIlePath); err != nil {
+		return err
+	}
+	defer inFile.Close()
+	if err := os.MkdirAll(filepath.Dir(outFilePath), 0777); err != nil {
+		return err
+	}
+	if outFile, err = os.OpenFile(outFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err != nil {
+		return err
+	}
+	defer outFile.Close()
+	if _, err := io.Copy(outFile, inFile); err != nil {
+		return err
+	}
+
+	msg := fmt.Sprintf("Added %s file to %s\n", file.Name(), file.MetaData.InstallPath)
+	self.updateChannel <- LogUpdate{
+		Append:     true,
+		Message:    msg,
+		UpdateType: UPDATE,
+	}
+
 	return nil
 }

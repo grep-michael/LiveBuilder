@@ -87,9 +87,9 @@ func (self *BuildWindow) buildMainBuildArea() *fyne.Container {
 			self.buildManager.Build(self.buildPath)
 			log.Println("all building done, display final message")
 
-			//fyne.DoAndWait(func() {
-			//	self.buildLogText.ParseMarkdown("Build Completed")
-			//})
+			fyne.DoAndWait(func() {
+				self.buildLogText.ParseMarkdown("Build Completed")
+			})
 			self.logContent.Reset()
 		}()
 	})

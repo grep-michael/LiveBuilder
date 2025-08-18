@@ -55,7 +55,7 @@ func executeCommand(cmd *exec.Cmd, outputChannel chan CommandOut) error {
 	go func() {
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
-			msg := "CMD Error: " + scanner.Text() + "\n"
+			msg := scanner.Text() + "\n"
 			outputChannel <- CommandOut{
 				OutType: STDERR,
 				OutPut:  msg,

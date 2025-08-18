@@ -2,5 +2,5 @@ qtbase5-dev
 qtchooser
 qt5-qmake
 qtbase5-dev-tools
-task-lxqt-desktop
+live-task-lxqt
 sddm
