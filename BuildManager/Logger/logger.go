@@ -55,10 +55,6 @@ type logRenderer struct {
 	bg  *canvas.Rectangle
 }
 
-func (r *logRenderer) Layout(size fyne.Size) {
-	r.bg.Resize(size)
-}
-
 func (r *logRenderer) MinSize() fyne.Size {
 	// Width grows with longest line, height grows with number of lines
 	width := float32(200)
@@ -70,6 +66,10 @@ func (r *logRenderer) MinSize() fyne.Size {
 	}
 	height := float32(len(r.log.lines)) * r.log.lineH
 	return fyne.NewSize(width+8, height)
+}
+
+func (r *logRenderer) Layout(size fyne.Size) {
+	r.bg.Resize(size)
 }
 
 func (r *logRenderer) Refresh() {
