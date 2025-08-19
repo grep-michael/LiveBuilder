@@ -43,7 +43,7 @@ func executeCommand(cmd *exec.Cmd, outputChannel chan CommandOut) error {
 	go func() {
 		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
-			msg := scanner.Text() //+ "\n"
+			msg := scanner.Text()
 			outputChannel <- CommandOut{
 				OutType: STDOUT,
 				OutPut:  msg,
@@ -55,7 +55,7 @@ func executeCommand(cmd *exec.Cmd, outputChannel chan CommandOut) error {
 	go func() {
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
-			msg := scanner.Text() //+ "\n"
+			msg := scanner.Text()
 			outputChannel <- CommandOut{
 				OutType: STDERR,
 				OutPut:  msg,

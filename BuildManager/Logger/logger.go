@@ -1,11 +1,13 @@
 package logger
 
 import (
+	"image/color"
+	"strings"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"image/color"
 )
 
 type LogView struct {
@@ -32,6 +34,7 @@ func (l *LogView) Clear() {
 
 // Append a new log line
 func (l *LogView) AppendLine(line string) {
+	line = strings.ReplaceAll(line, "\n", "")
 	if len(l.lines) >= l.max {
 		copy(l.lines, l.lines[1:])
 		l.lines[len(l.lines)-1] = line
