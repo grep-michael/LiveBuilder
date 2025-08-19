@@ -1,7 +1,7 @@
 lb config --apt apt \
   --distribution trixie \
   --archive-areas "main contrib non-free non-free-firmware" \
-  --apt-options "--yes" \
+  --apt-options "--no-install-recommends --yes" \
   --iso-volume "DefaultVolume" \
   --iso-publisher "DefaultPublisher" \
   --iso-application "DefaultApplication" \
@@ -12,3 +12,27 @@ lb config --apt apt \
   --image-name "DefaultName" \
   --architectures amd64 \
   --uefi-secure-boot enable
+
+
+
+lb config --apt apt \
+  --distribution trixie \
+  --apt-indices false \
+  --mode live \
+  --apt-recommends false \
+  --archive-areas "main contrib non-free non-free-firmware" \
+  --apt-options "--no-install-recommends --yes" \
+  --iso-volume "DefaultVolume" \
+  --iso-publisher "DefaultPublisher" \
+  --iso-application "DefaultApplication" \
+  --debootstrap-options "--variant=minbase" \
+  --bootappend-live "boot=live components hostname=live-host username=root toram" \
+  --binary-images "iso-hybrid" \
+  --bootloaders "syslinux,grub-efi" \
+  --image-name "DefaultName" \
+  --architectures amd64 \
+  --uefi-secure-boot enable \
+  --mirror-bootstrap http://deb.debian.org/debian/ \
+  --mirror-chroot http://deb.debian.org/debian/ \
+  --mirror-binary http://deb.debian.org/debian/ \
+  --mirror-binary-security http://deb.debian.org/debian-security/

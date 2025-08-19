@@ -3,4 +3,3 @@ qtchooser
 qt5-qmake
 qtbase5-dev-tools
 live-task-lxqt
-sddm

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sync"
 )
@@ -139,4 +140,10 @@ func (self *BuildManager) NukeBuild() error {
 		return err
 	}
 	return nil
+	cmd := exec.Command("lb", "clean")
+	if err := cmd.Start(); err != nil {
+		log.Printf("Error starting command: %v\n", err)
+		return err
+	}
+	return cmd.Wait()
 }

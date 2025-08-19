@@ -38,7 +38,7 @@ func NewBuildWindow(window fyne.Window) *fyne.Container {
 	build_window.logWidget = logger.NewLogView(200)
 
 	build_window.logScroll = container.NewScroll(build_window.logWidget)
-	build_window.logScroll.SetMinSize(fyne.NewSize(600, 600))
+	build_window.logScroll.SetMinSize(fyne.NewSize(600, 500))
 
 	build_window.buildManager = buildmanager.NewBuilder()
 
@@ -170,7 +170,8 @@ func (self *BuildWindow) buildMainBuildArea() *fyne.Container {
 		}()
 	})
 
-	hbox := container.NewVBox(buildButton, self.logScroll, self.buildStatusLabel)
+	hbox := container.NewBorder(buildButton, self.buildStatusLabel, nil, nil, self.logScroll)
+	//hbox := container.NewVBox(buildButton, self.logScroll, self.buildStatusLabel)
 	//hbox := container.NewVBox(buildButton, self.logWidget.GetWidget(), self.buildStatusLabel)
 	return hbox
 }

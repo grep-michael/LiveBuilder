@@ -6,7 +6,9 @@ linux-image-amd64
 linux-headers-amd64
 xserver-xorg-video-all
 xserver-xorg-input-all
+xorg
 mesa-utils
+isolinux
 firmware-amd-graphics
 firmware-ast
 firmware-ath9k-htc
