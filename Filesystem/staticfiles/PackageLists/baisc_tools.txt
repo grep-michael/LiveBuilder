@@ -5,7 +5,7 @@ fswebcam
 hwinfo
 pciutils
 sudo
-#ntpdate
+ntpsec-ntpdate
 lftp
 pulseaudio
 pulseaudio-utils
@@ -13,6 +13,6 @@ alsa-utils
 smartmontools
 sg3-utils
 util-linux
-isolinux
-python3-pip
 python3
+python3-pip
+python3-pyqt5

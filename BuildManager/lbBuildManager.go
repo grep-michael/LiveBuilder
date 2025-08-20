@@ -80,7 +80,8 @@ func (self *LBBuildManager) transformToLogUpdate(cmdout CommandOut) LogUpdate {
 }
 
 func (self *LBBuildManager) makeBuildCommand() *exec.Cmd {
-	cmd := exec.Command("lb", []string{"build", "--verbose", "--debug"}...)
+	//cmd := exec.Command("lb", []string{"build", "--verbose", "--debug"}...)
+	cmd := exec.Command("lb", []string{"build"}...)
 	cmd.Dir = self.buildPath
 	return cmd
 }

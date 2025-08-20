@@ -141,6 +141,7 @@ func (self *BuildManager) NukeBuild() error {
 	}
 	return nil
 	cmd := exec.Command("lb", "clean")
+	cmd.Env = os.Environ()
 	if err := cmd.Start(); err != nil {
 		log.Printf("Error starting command: %v\n", err)
 		return err

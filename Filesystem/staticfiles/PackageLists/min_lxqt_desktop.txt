@@ -1,5 +1,8 @@
-qtbase5-dev
-qtchooser
-qt5-qmake
-qtbase5-dev-tools
+task-english
 live-task-lxqt
+calamares-settings-debian
+lxqt-qtplugin
+papirus-icon-theme
+gnome-themes-extra
+hicolor-icon-theme
+fonts-dejavu-core

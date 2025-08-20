@@ -3,8 +3,10 @@ package buildmanager
 import (
 	"bufio"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"unicode"
 )
 
@@ -23,6 +25,8 @@ type CommandOut struct {
 func executeCommand(cmd *exec.Cmd, outputChannel chan CommandOut) error {
 	log.Println("executing command")
 	log.Println(cmd.Args)
+	cmd.Env = os.Environ()
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Printf("Error occured getting stdout pipe: %v\n", err)
@@ -39,30 +43,51 @@ func executeCommand(cmd *exec.Cmd, outputChannel chan CommandOut) error {
 		return err
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	// Read stdout
 	go func() {
+		defer wg.Done()
+		defer stdout.Close()
 		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
 			msg := scanner.Text()
-			outputChannel <- CommandOut{
+			select {
+			case outputChannel <- CommandOut{
 				OutType: STDOUT,
 				OutPut:  msg,
+			}:
+			default:
+				log.Printf("stdout full skipping\n")
+			}
+			if err := scanner.Err(); err != nil {
+				log.Printf("Error reading stdout: %v", err)
 			}
 		}
 	}()
 
 	// Read stderr
 	go func() {
+		defer wg.Done()
+		defer stderr.Close()
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
 			msg := scanner.Text()
-			outputChannel <- CommandOut{
+			select {
+			case outputChannel <- CommandOut{
 				OutType: STDERR,
 				OutPut:  msg,
+			}:
+			default:
+				log.Printf("stderr full skipping\n")
+			}
+			if err := scanner.Err(); err != nil {
+				log.Printf("Error reading stderr: %v", err)
 			}
 		}
 	}()
-
+	wg.Wait()
 	return cmd.Wait()
 }
 

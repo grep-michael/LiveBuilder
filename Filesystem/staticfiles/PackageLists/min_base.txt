@@ -4,10 +4,11 @@ live-config-systemd
 systemd-sysv
 linux-image-amd64
 linux-headers-amd64
-xserver-xorg-video-all
-xserver-xorg-input-all
 xorg
-mesa-utils
+xserver-xorg-video-all
+xserver-xorg-video-intel
+xserver-xorg-video-qxl
+xserver-xorg-input-all
 isolinux
 firmware-amd-graphics
 firmware-ast
@@ -37,4 +38,3 @@ firmware-siano
 firmware-sof-signed
 #firmware-tomu
 firmware-zd1211
-firmware-misc-nonfree
