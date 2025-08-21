@@ -1,0 +1,8 @@
+{
+  "install_path": "/",
+  "tags": [
+    "basic"
+  ],
+  "description": "Original Configuration we used, worked with debian 12",
+  "file_type": "config"
+}

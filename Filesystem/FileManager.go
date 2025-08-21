@@ -7,11 +7,11 @@ import (
 )
 
 const (
-	APPNAME              = "LiveBuidler"
-	PACKAGE_DIR_ID       = "PackageLists"
-	CUSTOMFILES_DIR_ID   = "CustomFiles"
-	LBCONFIG_TEMPLATE_ID = "lbconfig_template.template"
-	SPLASH_SCREENS_ID    = "SplashScreens"
+	APPNAME            = "LiveBuidler"
+	PACKAGE_DIR_ID     = "PackageLists"
+	CUSTOMFILES_DIR_ID = "CustomFiles"
+	LBCONFIGS_DIR_ID   = "LBConfigs"
+	SPLASH_SCREENS_ID  = "SplashScreens"
 )
 
 var lock = &sync.Mutex{}
@@ -49,19 +49,18 @@ func (self *FileManager) InializeFilesystem() {
 }
 func (self *FileManager) buildFilesystemMap() {
 	//var err error
+	consts := []string{
+		PACKAGE_DIR_ID,
+		CUSTOMFILES_DIR_ID,
+		LBCONFIGS_DIR_ID,
+		SPLASH_SCREENS_ID,
+	}
 
-	package_path := filepath.Join(self.GetAppDataDir(), PACKAGE_DIR_ID)
-	log.Printf("Packages path: %s\n", package_path)
-	self.fileSystems[PACKAGE_DIR_ID], _ = ScanDirectory(package_path)
-
-	scripts_path := filepath.Join(self.GetAppDataDir(), CUSTOMFILES_DIR_ID)
-	log.Printf("Scripts path: %s\n", scripts_path)
-	self.fileSystems[CUSTOMFILES_DIR_ID], _ = ScanDirectory(scripts_path)
-
-	splash_path := filepath.Join(self.GetAppDataDir(), SPLASH_SCREENS_ID)
-	log.Printf("splash path: %s\n", scripts_path)
-	self.fileSystems[SPLASH_SCREENS_ID], _ = ScanDirectory(splash_path)
-
+	for _, value := range consts {
+		path := filepath.Join(self.GetAppDataDir(), value)
+		log.Printf("Building path: %s\n", path)
+		self.fileSystems[value], _ = ScanDirectory(path)
+	}
 }
 func (self *FileManager) GetFileSystem(fs_identifier string) []DirectoryEntry {
 	return self.fileSystems[fs_identifier]

@@ -2,10 +2,15 @@ package buildmanager
 
 import (
 	appstate "LiveBuilder/AppState"
+	filesystem "LiveBuilder/Filesystem"
+	"bytes"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	//"path/filepath"
 	"sync"
+	"text/template"
 )
 
 type LBConfigManager struct {
@@ -69,7 +74,22 @@ func (self *LBConfigManager) transformToLogUpdate(cmdout CommandOut) LogUpdate {
 
 func (self *LBConfigManager) parseLBCommand() (*exec.Cmd, error) {
 
-	tokens := parseShellCommand(appstate.GetGlobalState().LBConfigCMD)
+	selectedCommandTemplate := appstate.GetGlobalState().GetDirectoryEntryMap(filesystem.LBCONFIGS_DIR_ID)
+
+	if len(selectedCommandTemplate) != 1 {
+		return nil, fmt.Errorf("Incorrect number of lb configs selected, must be only 1")
+	}
+
+	var lb_cmd string
+	var err error
+	for _, val := range selectedCommandTemplate {
+		lb_cmd, err = self.loadLBConfigTemplate(val)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	tokens := parseShellCommand(lb_cmd)
 	if len(tokens) == 0 {
 		log.Println("empty command")
 		return nil, fmt.Errorf("empty command")
@@ -78,4 +98,26 @@ func (self *LBConfigManager) parseLBCommand() (*exec.Cmd, error) {
 	cmd.Dir = self.buildPath
 
 	return cmd, nil
+}
+
+func (self *LBConfigManager) loadLBConfigTemplate(dir filesystem.DirectoryEntry) (string, error) {
+	state := appstate.GetGlobalState()
+
+	content, err := os.ReadFile(dir.FullPath())
+	if err != nil {
+		log.Fatalf("Error reading file: %v", err)
+	}
+
+	tmpl, err := template.New("lbconfig").Parse(string(content))
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, state.LBcfg); err != nil {
+		return "", err
+	}
+	str := buf.String()
+	log.Printf("Build lb config from template: %s\n", str)
+	return str, nil
 }

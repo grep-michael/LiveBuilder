@@ -24,8 +24,8 @@ func buildFileSelectionView() *fyne.Container {
 }
 
 func buildLBConfigView() *fyne.Container {
-	return livebuildconfig.NewlbTextEdit()
-
+	cfgtab := livebuildconfig.NewLBConfigurationTab()
+	return cfgtab.GetContainer()
 }
 
 func buildBuildWindow(window fyne.Window) *fyne.Container {
