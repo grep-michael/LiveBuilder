@@ -3,6 +3,6 @@
   "tags": [
     "basic"
   ],
-  "description": "Original Configuration we used, worked with debian 12",
+  "description": "same as basic but has a distribution specifier",
   "file_type": "config"
 }

@@ -12,6 +12,7 @@ const (
 	CUSTOMFILES_DIR_ID = "CustomFiles"
 	LBCONFIGS_DIR_ID   = "LBConfigs"
 	SPLASH_SCREENS_ID  = "SplashScreens"
+	ISO_DIR_ID         = "BuiltISOs"
 )
 
 var lock = &sync.Mutex{}

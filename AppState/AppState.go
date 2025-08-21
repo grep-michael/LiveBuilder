@@ -47,7 +47,6 @@ func GetGlobalState() *State {
 	}
 	return globalState
 }
-
 func (state *State) GetDirectoryEntryMap(identifier string) selectedFileMap {
 	fileMap, ok := state.selectedFiles[identifier]
 	if !ok {
@@ -74,7 +73,6 @@ func (state *State) SetISOApplication(name string) {
 func (state *State) SetISOImageName(name string) {
 	state.setISOStringField(&state.LBcfg.ISOImageName, name)
 }
-
 func (state *State) ISOVolumeName() string {
 	return state.LBcfg.ISOVolume
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	filesystem "LiveBuilder/Filesystem"
+	preflightchecks "LiveBuilder/PreFlightChecks"
 	frontend "LiveBuilder/frontend"
 	"log"
 	"os"
@@ -25,6 +26,8 @@ func main() {
 	defer LOGFILE.Close()
 	configureLogging()
 	log.Println("App Start")
+
+	preflightchecks.CheckAll(false)
 
 	mainWindow := frontend.NewMainWindow("Live Builder")
 	mainWindow.ShowAndRun()

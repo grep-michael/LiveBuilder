@@ -10,8 +10,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"log"
 	"strings"
-	//"sync"
-	//"time"
+	"sync"
+	"time"
 )
 
 type BuildWindow struct {
@@ -33,9 +33,8 @@ func NewBuildWindow(window fyne.Window) *fyne.Container {
 		selectedPathLabel: widget.NewLabel("Select folder"),
 		buildStatusLabel:  widget.NewLabel("Statuses"),
 	}
-	//build_window.buildLogText = widget.NewRichTextFromMarkdown("Build Log will appear here...")
-	//build_window.buildLogText.Wrapping = fyne.TextWrapWord
-	build_window.logWidget = logger.NewLogView(200)
+
+	build_window.logWidget = logger.NewLogView(500)
 
 	build_window.logScroll = container.NewScroll(build_window.logWidget)
 	build_window.logScroll.SetMinSize(fyne.NewSize(600, 500))
@@ -70,78 +69,81 @@ func (self *BuildWindow) buildFolderSelectionHeader() *fyne.Container {
 	return hbox
 }
 
-/*
-	func (self *BuildWindow) startLogSubscriberWithBatching() {
-		subscriber := self.buildManager.GetSubscriber()
+func (self *BuildWindow) startLogSubscriberWithBatching() {
+	/*
+		began working on batching, but never got it completed, and changing to the LogView custom widget
+		made lots of small updates more mangable such that i never felt the need to finish this function
+	*/
+	subscriber := self.buildManager.GetSubscriber()
 
-		const (
-			maxBatchSize  = 20
-			flushInterval = 3 * time.Second
-		)
+	const (
+		maxBatchSize  = 20
+		flushInterval = 3 * time.Second
+	)
 
-		var pendingUpdates []buildmanager.LogUpdate
-		var mu sync.Mutex
-		var lastFlush time.Time = time.Now()
+	var pendingUpdates []buildmanager.LogUpdate
+	var mu sync.Mutex
+	var lastFlush time.Time = time.Now()
 
-		flushUpdates := func() {
-			mu.Lock()
-			defer mu.Unlock()
+	flushUpdates := func() {
+		mu.Lock()
+		defer mu.Unlock()
 
-			if len(pendingUpdates) == 0 {
-				return
-			}
-
-			updates := make([]buildmanager.LogUpdate, len(pendingUpdates))
-			copy(updates, pendingUpdates)
-			pendingUpdates = pendingUpdates[:0]
-			lastFlush = time.Now()
-
-			for _, update := range updates {
-				fyne.Do(func() {
-
-				})
-				if !update.Append {
-					self.logWidget.Clear()
-				}
-				self.logWidget.AppendLine(update.Message)
-			}
+		if len(pendingUpdates) == 0 {
+			return
 		}
 
-		// Periodic flush goroutine
-		go func() {
-			ticker := time.NewTicker(1 * time.Second) // Check every second
-			defer ticker.Stop()
+		updates := make([]buildmanager.LogUpdate, len(pendingUpdates))
+		copy(updates, pendingUpdates)
+		pendingUpdates = pendingUpdates[:0]
+		lastFlush = time.Now()
 
-			for range ticker.C {
-				mu.Lock()
-				shouldFlush := len(pendingUpdates) > 0 && time.Since(lastFlush) >= flushInterval
-				mu.Unlock()
+		for _, update := range updates {
+			fyne.Do(func() {
 
-				if shouldFlush {
-					flushUpdates()
-				}
-			}
-		}()
-
-		// Collect updates
-		for update := range subscriber {
-			mu.Lock()
-			pendingUpdates = append(pendingUpdates, buildmanager.LogUpdate{
-				Message: update.Message,
-				Append:  update.Append,
 			})
-			shouldFlush := len(pendingUpdates) >= maxBatchSize
+			if !update.Append {
+				self.logWidget.Clear()
+			}
+			self.logWidget.AppendLine(update.Message)
+		}
+	}
+
+	// Periodic flush goroutine
+	go func() {
+		ticker := time.NewTicker(1 * time.Second) // Check every second
+		defer ticker.Stop()
+
+		for range ticker.C {
+			mu.Lock()
+			shouldFlush := len(pendingUpdates) > 0 && time.Since(lastFlush) >= flushInterval
 			mu.Unlock()
 
 			if shouldFlush {
 				flushUpdates()
 			}
 		}
+	}()
 
-		// Final flush
-		flushUpdates()
+	// Collect updates
+	for update := range subscriber {
+		mu.Lock()
+		pendingUpdates = append(pendingUpdates, buildmanager.LogUpdate{
+			Message: update.Message,
+			Append:  update.Append,
+		})
+		shouldFlush := len(pendingUpdates) >= maxBatchSize
+		mu.Unlock()
+
+		if shouldFlush {
+			flushUpdates()
+		}
 	}
-*/
+
+	// Final flush
+	flushUpdates()
+}
+
 func (self *BuildWindow) startLogSubscriber() {
 	subscriber := self.buildManager.GetSubscriber()
 	for update := range subscriber {
@@ -171,7 +173,5 @@ func (self *BuildWindow) buildMainBuildArea() *fyne.Container {
 	})
 
 	hbox := container.NewBorder(buildButton, self.buildStatusLabel, nil, nil, self.logScroll)
-	//hbox := container.NewVBox(buildButton, self.logScroll, self.buildStatusLabel)
-	//hbox := container.NewVBox(buildButton, self.logWidget.GetWidget(), self.buildStatusLabel)
 	return hbox
 }

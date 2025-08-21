@@ -10,6 +10,8 @@ Master object for doing all the backend building
 import (
 	filesystem "LiveBuilder/Filesystem"
 	"fmt"
+	"io"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
@@ -55,9 +57,15 @@ func NewBuilder() *BuildManager {
 }
 
 func (self *BuildManager) GetDefaultBuildPath() string {
-	appdata, _ := filesystem.GetAppDataDir()
-	buildpath := filepath.Join(appdata, "build")
-	return buildpath
+	path, err := os.MkdirTemp("", "LiveBuilder-*")
+	if err != nil {
+		log.Println(err)
+		appdata, _ := filesystem.GetAppDataDir()
+		buildpath := filepath.Join(appdata, "build")
+		return buildpath
+	}
+	return path
+
 }
 
 func (self *BuildManager) Build(buildPath string) {
@@ -95,6 +103,48 @@ func (self *BuildManager) Build(buildPath string) {
 		}
 		return
 	}
+	if err := self.copyISO(); err != nil {
+		self.updateChannel <- LogUpdate{
+			Append:  true,
+			Message: fmt.Sprintf("Error occured copying iso file: %v\n", err),
+		}
+		return
+	}
+
+}
+
+func (self *BuildManager) copyISO() error {
+	//create folder for iso to be copied to
+	appdata, _ := filesystem.GetAppDataDir()
+	iso_path := filepath.Join(appdata, filesystem.ISO_DIR_ID)
+	if err := os.MkdirAll(iso_path, 0777); err != nil {
+		return err
+	}
+	//get iso filepath
+	var iso_files []string
+	filepath.WalkDir(self.buildPath, func(s string, d fs.DirEntry, e error) error {
+		if e != nil {
+			return e
+		}
+		if filepath.Ext(d.Name()) == ".iso" {
+			iso_files = append(iso_files, s)
+		}
+		return nil
+	})
+	for _, iso_file := range iso_files {
+		dest := filepath.Join(iso_path, filepath.Base(iso_file))
+		self.updateChannel <- LogUpdate{
+			Append:  true,
+			Message: fmt.Sprintf("Copying:\n\t%s\n\tto\n\t%s\n", iso_file, dest),
+		}
+
+		err := copyFile(iso_file, dest)
+		if err != nil {
+			log.Printf("Error copying iso file %s\n", err)
+			return err
+		}
+	}
+	return nil
 }
 
 func (self *BuildManager) GetSubscriber() <-chan LogUpdate {
@@ -122,6 +172,7 @@ func (self *BuildManager) listenForUpdates() {
 func (self *BuildManager) InitializeBuildPath(buildPath string) error {
 	if buildPath == "" {
 		self.buildPath = self.GetDefaultBuildPath()
+		log.Printf("Using default build directory: %s\n", self.buildPath)
 	} else {
 		self.buildPath = buildPath
 	}
@@ -147,4 +198,40 @@ func (self *BuildManager) NukeBuild() error {
 		return err
 	}
 	return cmd.Wait()
+}
+
+func copyFile(src, dst string) error {
+	// Open the source file for reading
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("failed to open source file: %w", err)
+	}
+	defer sourceFile.Close() // Ensure the source file is closed
+
+	// Create the destination file for writing (creates if not exists, truncates if exists)
+	destinationFile, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file: %w", err)
+	}
+	defer func() {
+		// Close the destination file and handle potential errors during close
+		cerr := destinationFile.Close()
+		if err == nil { // Only update err if no previous error occurred
+			err = cerr
+		}
+	}()
+
+	// Copy the contents from source to destination
+	_, err = io.Copy(destinationFile, sourceFile)
+	if err != nil {
+		return fmt.Errorf("failed to copy file contents: %w", err)
+	}
+
+	// Ensure all data is written to disk
+	err = destinationFile.Sync()
+	if err != nil {
+		return fmt.Errorf("failed to sync destination file: %w", err)
+	}
+
+	return nil
 }
