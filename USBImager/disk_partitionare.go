@@ -52,9 +52,7 @@ func (self *DiskPartitionare) WriteFileSystems() error {
 	}
 	for i, partition := range self.PartitionTable.partitions {
 		device := fmt.Sprintf("%sp%d", self.loopPath, i+1)
-		cmd, _ := getFormatCommandForDeivce(partition.partType, device)
-		if partition.volumeName != "" {
-		}
+		cmd, _ := getFormatCommandForDeivce(partition.partType, device, partition.volumeName)
 		stdout, stderr, err := run("sudo", strings.Split(cmd, " ")...)
 		log.Printf("MKFS COMMAND: %s\n", cmd)
 		log.Printf("stdout (%s)\nstderr (%s)\n", stdout, stderr)
@@ -63,7 +61,7 @@ func (self *DiskPartitionare) WriteFileSystems() error {
 			return err
 		}
 	}
-	self.closeLoop()
+	//self.closeLoop()
 
 	return nil
 }

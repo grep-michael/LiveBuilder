@@ -118,10 +118,10 @@ configfile /boot/grub/grub.cfg
 
 	//    Real config on ext4. Two entries show how to switch squashfs sets via live-media-path.
 	fullCfg := `set default=0
-set timeout=5
+set timeout=100
 
 insmod search_fs_label
-search --no-floppy --set=root --label LIVEUSB
+search --no-floppy --set=root --label SYSTEM
 
 menuentry "Debian Live (Default)" {
     linux /live/vmlinuz boot=live quiet splash live-media-path=/live/default

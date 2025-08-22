@@ -40,6 +40,6 @@ func guiMain() {
 
 func testMain() {
 	imager := usbimager.NewUSBImager()
-	err := imager.ImageUSB("/tmp/Fake.iso", "/dev/sdd")
+	err := imager.ImageUSB("/tmp/Fake.iso", "/dev/sde")
 	fmt.Println(err)
 }

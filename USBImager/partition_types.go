@@ -87,36 +87,35 @@ var PartitionsCodeToName = map[PartitionType]string{
 	LinuxRAID:         "Linux raid autodetect",
 }
 
-// mkfsCommands maps partition types to their mkfs command templates
 var MkfsCommands = map[PartitionType]string{
 	// FAT filesystems
-	FAT12:         "mkfs.vfat -F 12 {{.Device}}",
-	FAT16Small:    "mkfs.vfat -F 16 {{.Device}}",
-	FAT16:         "mkfs.vfat -F 16 {{.Device}}",
-	W95_FAT32:     "mkfs.vfat -F 32 {{.Device}}",
-	W95_FAT32_LBA: "mkfs.vfat -F 32 {{.Device}}",
-	EFI_FAT:       "mkfs.vfat -F 32 {{.Device}}",
+	FAT12:         "mkfs.vfat -F 12 -n {{.Label}} {{.Device}}",
+	FAT16Small:    "mkfs.vfat -F 16 -n {{.Label}} {{.Device}}",
+	FAT16:         "mkfs.vfat -F 16 -n {{.Label}} {{.Device}}",
+	W95_FAT32:     "mkfs.vfat -F 32 -n {{.Label}} {{.Device}}",
+	W95_FAT32_LBA: "mkfs.vfat -F 32 -n {{.Label}} {{.Device}}",
+	EFI_FAT:       "mkfs.vfat -F 32 -n {{.Label}} {{.Device}}",
 
-	// Hidden FAT filesystems (same as regular but hidden)
-	HiddenFAT12: "mkfs.vfat -F 12 {{.Device}}",
-	HiddenFAT16: "mkfs.vfat -F 16 {{.Device}}",
+	// Hidden FAT filesystems
+	HiddenFAT12: "mkfs.vfat -F 12 -n {{.Label}} {{.Device}}",
+	HiddenFAT16: "mkfs.vfat -F 16 -n {{.Label}} {{.Device}}",
 
 	// NTFS/exFAT
-	HPFS_NTFS_exFAT: "mkfs.ntfs -F {{.Device}}",
-	HiddenHPFS_NTFS: "mkfs.ntfs -F {{.Device}}",
+	HPFS_NTFS_exFAT: "mkfs.ntfs -F -L {{.Label}} {{.Device}}",
+	HiddenHPFS_NTFS: "mkfs.ntfs -F -L {{.Label}} {{.Device}}",
 
 	// Linux filesystems
-	Linux:             "mkfs.ext4 -F {{.Device}}",
-	LinuxSwap_Solaris: "mkswap {{.Device}}",
+	Linux:             "mkfs.ext4 -F -L {{.Label}} {{.Device}}",
+	LinuxSwap_Solaris: "mkswap -L {{.Label}} {{.Device}}",
 	LinuxLVM:          "", // LVM partitions don't get formatted directly
 	LinuxRAID:         "", // RAID partitions don't get formatted directly
 
 	// BSD filesystems
-	FreeBSD:    "newfs {{.Device}}",     // UFS filesystem for FreeBSD
-	OpenBSD:    "newfs {{.Device}}",     // UFS filesystem for OpenBSD
-	UFS_Darwin: "newfs {{.Device}}",     // UFS filesystem for Darwin
-	NeXTSTEP:   "newfs {{.Device}}",     // UFS filesystem for NeXTSTEP
-	DarwinBoot: "newfs_hfs {{.Device}}", // HFS+ for Darwin boot partition
+	FreeBSD:    "newfs -L {{.Label}} {{.Device}}",
+	OpenBSD:    "newfs -L {{.Label}} {{.Device}}",
+	UFS_Darwin: "newfs -L {{.Label}} {{.Device}}",
+	NeXTSTEP:   "newfs -L {{.Label}} {{.Device}}",
+	DarwinBoot: "newfs_hfs -v {{.Label}} {{.Device}}",
 
 	// Extended partitions don't get formatted
 	Extended:         "",
@@ -124,7 +123,7 @@ var MkfsCommands = map[PartitionType]string{
 	LinuxExtended:    "",
 }
 
-func getFormatCommandForDeivce(partType PartitionType, device string) (string, error) {
+func getFormatCommandForDeivce(partType PartitionType, device string, label string) (string, error) {
 	cmdTemplate, exists := MkfsCommands[partType]
 	if !exists {
 		return "", fmt.Errorf("no mkfs command available for partition type %s", partType)
@@ -139,8 +138,10 @@ func getFormatCommandForDeivce(partType PartitionType, device string) (string, e
 	var cmdBuf strings.Builder
 	data := struct {
 		Device string
+		Label  string
 	}{
 		Device: device,
+		Label:  label,
 	}
 
 	if err := tmpl.Execute(&cmdBuf, data); err != nil {
