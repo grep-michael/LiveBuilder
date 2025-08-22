@@ -1,6 +1,8 @@
-package paritions
+package usbimager
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type TableType string
 
@@ -36,6 +38,7 @@ func (table *PartitionTabelBuilder) WithPartitionDefinition(definition *Partitio
 	table.partitions = append(table.partitions, definition)
 	return table
 }
+
 func (table *PartitionTabelBuilder) ToSfdisk() string {
 
 	partitionTable := fmt.Sprintf(

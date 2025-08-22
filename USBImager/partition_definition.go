@@ -1,4 +1,4 @@
-package paritions
+package usbimager
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 )
 
 type PartitionDefinitionBuilder struct {
+	volumeName       string
 	label            string
 	stringAttributes map[string]string
 	bootable         bool
@@ -22,6 +23,12 @@ func NewPartitionBuilder(label string) *PartitionDefinitionBuilder {
 		label:            label,
 		stringAttributes: make(map[string]string),
 	}
+}
+func (pb *PartitionDefinitionBuilder) WithName(volumeName string) *PartitionDefinitionBuilder {
+	//used by a Diskpartitionare to set volume names during mkfs runs
+	pb.volumeName = volumeName
+	pb.stringAttributes["name"] = fmt.Sprintf("\"%s\"", volumeName)
+	return pb
 }
 func (pb *PartitionDefinitionBuilder) OfType(typ PartitionType) *PartitionDefinitionBuilder {
 	pb.partType = typ

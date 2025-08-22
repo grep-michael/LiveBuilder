@@ -65,11 +65,9 @@ func (self *USBImager) prepOutFile(outFile FileObject, outFileSize int64) error 
 			return err
 		}
 	}
-	//partition it
-	err := outFile.partition()
-	if err != nil {
-		return err
-	}
+	diskpart := StandardLinuxMBRBootPart(outFile)
+	diskpart.PartitionDisk()
+	diskpart.WriteFileSystems()
 
 	return nil
 }

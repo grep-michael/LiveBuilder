@@ -1,6 +1,10 @@
-package paritions
+package usbimager
 
-import ()
+import (
+	"fmt"
+	"strings"
+	"text/template"
+)
 
 // PartitionType represents a partition type code
 type PartitionType string
@@ -81,4 +85,67 @@ var PartitionsCodeToName = map[PartitionType]string{
 	DarwinBoot:        "Darwin boot",
 	EFI_FAT:           "EFI (FAT-12/16/32)",
 	LinuxRAID:         "Linux raid autodetect",
+}
+
+// mkfsCommands maps partition types to their mkfs command templates
+var MkfsCommands = map[PartitionType]string{
+	// FAT filesystems
+	FAT12:         "mkfs.vfat -F 12 {{.Device}}",
+	FAT16Small:    "mkfs.vfat -F 16 {{.Device}}",
+	FAT16:         "mkfs.vfat -F 16 {{.Device}}",
+	W95_FAT32:     "mkfs.vfat -F 32 {{.Device}}",
+	W95_FAT32_LBA: "mkfs.vfat -F 32 {{.Device}}",
+	EFI_FAT:       "mkfs.vfat -F 32 {{.Device}}",
+
+	// Hidden FAT filesystems (same as regular but hidden)
+	HiddenFAT12: "mkfs.vfat -F 12 {{.Device}}",
+	HiddenFAT16: "mkfs.vfat -F 16 {{.Device}}",
+
+	// NTFS/exFAT
+	HPFS_NTFS_exFAT: "mkfs.ntfs -F {{.Device}}",
+	HiddenHPFS_NTFS: "mkfs.ntfs -F {{.Device}}",
+
+	// Linux filesystems
+	Linux:             "mkfs.ext4 -F {{.Device}}",
+	LinuxSwap_Solaris: "mkswap {{.Device}}",
+	LinuxLVM:          "", // LVM partitions don't get formatted directly
+	LinuxRAID:         "", // RAID partitions don't get formatted directly
+
+	// BSD filesystems
+	FreeBSD:    "newfs {{.Device}}",     // UFS filesystem for FreeBSD
+	OpenBSD:    "newfs {{.Device}}",     // UFS filesystem for OpenBSD
+	UFS_Darwin: "newfs {{.Device}}",     // UFS filesystem for Darwin
+	NeXTSTEP:   "newfs {{.Device}}",     // UFS filesystem for NeXTSTEP
+	DarwinBoot: "newfs_hfs {{.Device}}", // HFS+ for Darwin boot partition
+
+	// Extended partitions don't get formatted
+	Extended:         "",
+	W95_Extended_LBA: "",
+	LinuxExtended:    "",
+}
+
+func getFormatCommandForDeivce(partType PartitionType, device string) (string, error) {
+	cmdTemplate, exists := MkfsCommands[partType]
+	if !exists {
+		return "", fmt.Errorf("no mkfs command available for partition type %s", partType)
+	}
+
+	// Parse and execute the template
+	tmpl, err := template.New("mkfs").Parse(cmdTemplate)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse command template: %v", err)
+	}
+
+	var cmdBuf strings.Builder
+	data := struct {
+		Device string
+	}{
+		Device: device,
+	}
+
+	if err := tmpl.Execute(&cmdBuf, data); err != nil {
+		return "", fmt.Errorf("failed to execute command template: %v", err)
+	}
+
+	return cmdBuf.String(), nil
 }
