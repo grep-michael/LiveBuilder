@@ -3,7 +3,9 @@ package main
 import (
 	filesystem "LiveBuilder/Filesystem"
 	preflightchecks "LiveBuilder/PreFlightChecks"
+	usbimager "LiveBuilder/USBImager"
 	frontend "LiveBuilder/frontend"
+	"fmt"
 	"log"
 	"os"
 )
@@ -17,19 +19,27 @@ func configureLogging() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.SetOutput(LOGFILE)
-	log.SetPrefix("LiveBuilder: ")
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	InitLoging("LiveBuilder: ", "	", LOGFILE)
+
 }
 
 func main() {
 	defer LOGFILE.Close()
 	configureLogging()
 	log.Println("App Start")
+	testMain()
+}
 
+func guiMain() {
 	preflightchecks.CheckAll(false)
 
 	mainWindow := frontend.NewMainWindow("Live Builder")
 	mainWindow.ShowAndRun()
+}
 
+func testMain() {
+	imager := usbimager.NewUSBImager()
+	err := imager.ImageUSB("/tmp/Fake.iso", "/dev/sdd")
+	fmt.Println(err)
 }

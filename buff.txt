@@ -1,40 +1,156 @@
-lb config --apt apt \
-  --cache true \
-  --cache-packages true \
-  --distribution trixie \
-  --archive-areas "main contrib non-free non-free-firmware" \
-  --apt-options "--no-install-recommends --yes" \
-  --iso-volume "DefaultVolume" \
-  --iso-publisher "DefaultPublisher" \
-  --iso-application "DefaultApplication" \
-  --debootstrap-options "--variant=minbase" \
-  --bootappend-live "boot=live components hostname=live-host username=root toram" \
-  --binary-images "iso-hybrid" \
-  --bootloaders "syslinux,grub-efi" \
-  --image-name "DefaultName" \
-  --architectures amd64 \
-  --uefi-secure-boot enable \
+package main
 
+import (
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+)
 
+func run(name string, args ...string) {
+	cmd := exec.Command(name, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Fatalf("command failed: %s %v: %v", name, args, err)
+	}
+}
 
-lb config --apt apt \
-  --distribution trixie \
-  --apt-indices false \
-  --mode live \
-  --apt-recommends false \
-  --archive-areas "main contrib non-free non-free-firmware" \
-  --apt-options "--no-install-recommends --yes" \
-  --iso-volume "DefaultVolume" \
-  --iso-publisher "DefaultPublisher" \
-  --iso-application "DefaultApplication" \
-  --debootstrap-options "--variant=minbase" \
-  --bootappend-live "boot=live components hostname=live-host username=root toram" \
-  --binary-images "iso-hybrid" \
-  --bootloaders "syslinux,grub-efi" \
-  --image-name "DefaultName" \
-  --architectures amd64 \
-  --uefi-secure-boot enable \
-  --mirror-bootstrap http://deb.debian.org/debian/ \
-  --mirror-chroot http://deb.debian.org/debian/ \
-  --mirror-binary http://deb.debian.org/debian/ \
-  --mirror-binary-security http://deb.debian.org/debian-security/
+func writeFile(path, content string, perm os.FileMode) {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		log.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(content), perm); err != nil {
+		log.Fatalf("write %s: %v", path, err)
+	}
+}
+
+func main() {
+	if len(os.Args) != 3 {
+		fmt.Fprintf(os.Stderr, "Usage: %s /path/to/live.iso /dev/sdX\n", os.Args[0])
+		os.Exit(1)
+	}
+	iso := os.Args[1]
+	dev := os.Args[2] // e.g. /dev/sdX
+
+	// Safety checks
+	if _, err := os.Stat(iso); err != nil {
+		log.Fatalf("ISO not found: %v", err)
+	}
+	fi, err := os.Stat(dev)
+	if err != nil || (fi.Mode()&os.ModeDevice) == 0 {
+		log.Fatalf("Device not found or not a block device: %s", dev)
+	}
+
+	fmt.Printf("⚠️  This will ERASE ALL DATA on %s. Type YES to continue: ", dev)
+	var ans string
+	fmt.Scanln(&ans)
+	if ans != "YES" {
+		log.Fatal("aborted")
+	}
+
+	efiPart := dev + "1"
+	extPart := dev + "2"
+
+	// 1) Wipe + partition (GPT: ESP 512MiB + ext4 rest)
+	run("wipefs", "-a", dev)
+	run("parted", "-s", dev, "mklabel", "gpt")
+	run("parted", "-s", dev, "mkpart", "EFI", "fat32", "1MiB", "512MiB")
+	run("parted", "-s", dev, "set", "1", "esp", "on")
+	run("parted", "-s", dev, "mkpart", "LIVE", "ext4", "512MiB", "100%")
+
+	// 2) Make filesystems
+	run("mkfs.vfat", "-F32", "-n", "EFI", efiPart)
+	run("mkfs.ext4", "-F", "-L", "LIVEUSB", extPart)
+
+	// 3) Mount points
+	isoMnt := "/mnt/iso"
+	efiMnt := "/mnt/usb-efi"
+	liveMnt := "/mnt/usb-live"
+	os.MkdirAll(isoMnt, 0755)
+	os.MkdirAll(efiMnt, 0755)
+	os.MkdirAll(liveMnt, 0755)
+
+	// 4) Mount ISO (ro), and target partitions
+	run("mount", "-o", "loop,ro", iso, isoMnt)
+	run("mount", extPart, liveMnt)
+	run("mount", efiPart, efiMnt)
+
+	// 5) Copy needed files from ISO to ext4:
+	//    - Kernel, initrd, live payload (squashfs), plus boot/grub themes if you want.
+	// You can copy the whole ISO tree if you prefer, but here is the minimal set:
+	run("rsync", "-aH", "--info=progress2", isoMnt+"/live/", liveMnt+"/live/")
+	// If you want GRUB themes/configs from the ISO (optional):
+	run("rsync", "-aH", isoMnt+"/boot/grub/", liveMnt+"/boot/grub/")
+
+	// 6) Install GRUB (BIOS -> MBR on disk; UEFI -> EFI System Partition)
+	run("grub-install", "--target=i386-pc", "--boot-directory="+liveMnt+"/boot", "--recheck", dev)
+	run("grub-install",
+		"--target=x86_64-efi",
+		"--efi-directory="+efiMnt,
+		"--boot-directory="+liveMnt+"/boot",
+		"--removable",
+		"--recheck",
+	)
+
+	// 7) Secure Boot (optional but recommended): copy shim + signed GRUB if available
+	// Paths are typical on Debian; adjust if your distro differs.
+	if _, err := os.Stat("/usr/lib/shim/shimx64.efi.signed"); err == nil {
+		run("mkdir", "-p", filepath.Join(efiMnt, "EFI", "BOOT"))
+		run("cp", "/usr/lib/shim/shimx64.efi.signed", filepath.Join(efiMnt, "EFI", "BOOT", "BOOTX64.EFI"))
+		// grubx64.efi.signed path may vary by distro; this is common on Debian/Ubuntu
+		if _, err := os.Stat("/usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed"); err == nil {
+			run("cp", "/usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed", filepath.Join(efiMnt, "EFI", "BOOT", "grubx64.efi"))
+		} else {
+			log.Printf("Signed GRUB not found; install grub-efi-amd64-signed for Secure Boot.")
+		}
+	} else {
+		log.Printf("shim-signed not found; install shim-signed for Secure Boot.")
+	}
+
+	// 8) GRUB configs
+	//    Stub on EFI FAT32 that points to the real config on ext4 (by label).
+	stubCfg := `search --no-floppy --set=root --label LIVEUSB
+configfile /boot/grub/grub.cfg
+`
+	writeFile(filepath.Join(efiMnt, "boot", "grub", "grub.cfg"), stubCfg, 0644)
+
+	//    Real config on ext4. Two entries show how to switch squashfs sets via live-media-path.
+	fullCfg := `set default=0
+set timeout=5
+
+insmod search_fs_label
+search --no-floppy --set=root --label LIVEUSB
+
+menuentry "Debian Live (Default)" {
+    linux /live/vmlinuz boot=live quiet splash live-media-path=/live/default
+    initrd /live/initrd.img
+}
+
+menuentry "Debian Live (Low RAM)" {
+    linux /live/vmlinuz boot=live quiet splash live-media-path=/live/lowram
+    initrd /live/initrd.img
+}
+`
+	writeFile(filepath.Join(liveMnt, "boot", "grub", "grub.cfg"), fullCfg, 0644)
+
+	// 9) Optional: create layout for multiple squashfs sets
+	_ = os.MkdirAll(filepath.Join(liveMnt, "live", "default"), 0755)
+	_ = os.MkdirAll(filepath.Join(liveMnt, "live", "lowram"), 0755)
+	// Move the copied filesystem.squashfs into default, if you want:
+	// run("mv", liveMnt+"/live/filesystem.squashfs", liveMnt+"/live/default/filesystem.squashfs")
+	// And you can add a shared overlay like /live/00-custom.squashfs that both entries will load.
+
+	// 10) Cleanup
+	run("sync")
+	// unmount in reverse
+	_ = exec.Command("umount", efiMnt).Run()
+	_ = exec.Command("umount", liveMnt).Run()
+	_ = exec.Command("umount", isoMnt).Run()
+	_ = os.RemoveAll(efiMnt)
+	_ = os.RemoveAll(liveMnt)
+	_ = os.RemoveAll(isoMnt)
+
+	fmt.Println("✅ USB prepared: BIOS + UEFI (+ Secure Boot if shim/grub-signed present). Replace /live/* files freely.")
+}

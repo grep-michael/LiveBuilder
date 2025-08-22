@@ -135,7 +135,7 @@ func (self *BuildManager) copyISO() error {
 		dest := filepath.Join(iso_path, filepath.Base(iso_file))
 		self.updateChannel <- LogUpdate{
 			Append:  true,
-			Message: fmt.Sprintf("Copying:\n\t%s\n\tto\n\t%s\n", iso_file, dest),
+			Message: fmt.Sprintf("Copying:%s -> %s\n", iso_file, dest),
 		}
 
 		err := copyFile(iso_file, dest)
