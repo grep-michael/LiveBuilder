@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -67,13 +68,13 @@ type SystemFileInfo struct {
 	Attributes uint32    // File attributes (Windows only)
 }
 
-func NewFileObject(path string, create_new bool) (FileObject, error) {
+func NewFileObject(path string, create_if_nonexist bool) (FileObject, error) {
 	fileinfo, err := NewSystemFileInfoFromPath(path)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return FileObject{}, err
 		}
-		if !create_new {
+		if !create_if_nonexist {
 			return FileObject{}, err
 		}
 		log.Printf("Making new File %s\n", path)
@@ -182,24 +183,22 @@ func getUsernameForUID(uid string) string {
 	return name
 }
 
-func calculateNeededSizeForISO(iso FileObject) int64 {
+func CalculateNeededSizeForISO(iso FileObject) int64 {
 	bytes := iso.Info.Size
-	const GB = 1024 * 1024 * 1024
+	//const GB = 1024 * 1024 * 1024
 	if bytes <= 0 {
 		return 0
 	}
-	gbNeeded := (bytes + GB - 1) / GB //ceiling division
-	return gbNeeded * GB
+	//gbNeeded := (bytes + GB - 1) / GB //ceiling division
+	gbNeeded := bytes + 52428800 //~50MiB for boot partition
+	return gbNeeded              //* GB
 }
 
-func run(cmd string, args ...string) (string, string, error) {
-	var out bytes.Buffer
-	var err bytes.Buffer
-	c := exec.Command(cmd, args...)
-	c.Stdout = &out
-	c.Stderr = &err
-	if err := c.Run(); err != nil {
-		return "", "", err
+func WriteFile(path, content string, perm os.FileMode) {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		log.Fatal(err)
 	}
-	return out.String(), err.String(), nil
+	if err := os.WriteFile(path, []byte(content), perm); err != nil {
+		log.Fatalf("write %s: %v", path, err)
+	}
 }

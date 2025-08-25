@@ -57,7 +57,11 @@ func NewBuilder() *BuildManager {
 }
 
 func (self *BuildManager) GetDefaultBuildPath() string {
-	path, err := os.MkdirTemp("", "LiveBuilder-*")
+	appdata, _ := filesystem.GetAppDataDir()
+	buildpath := filepath.Join(appdata, "build")
+
+	// /tmp/ has nodev flag meaning lb build wont work on it
+	path, err := os.MkdirTemp(buildpath, "buildtemp-*")
 	if err != nil {
 		log.Println(err)
 		appdata, _ := filesystem.GetAppDataDir()

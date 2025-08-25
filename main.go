@@ -4,6 +4,7 @@ import (
 	filesystem "LiveBuilder/Filesystem"
 	preflightchecks "LiveBuilder/PreFlightChecks"
 	usbimager "LiveBuilder/USBImager"
+
 	frontend "LiveBuilder/frontend"
 	"fmt"
 	"log"
@@ -28,10 +29,12 @@ func main() {
 	defer LOGFILE.Close()
 	configureLogging()
 	log.Println("App Start")
-	testMain()
+	guiMain()
 }
 
 func guiMain() {
+	//# Regenerate X11 authorization
+	//xhost +local:
 	preflightchecks.CheckAll(false)
 
 	mainWindow := frontend.NewMainWindow("Live Builder")
@@ -40,6 +43,7 @@ func guiMain() {
 
 func testMain() {
 	imager := usbimager.NewUSBImager()
-	err := imager.ImageUSB("/tmp/Fake.iso", "/dev/sde")
+	err := imager.ImageUSB("/tmp/Fake.iso", "/dev/sdd")
 	fmt.Println(err)
+
 }

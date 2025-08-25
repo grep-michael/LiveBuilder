@@ -1,6 +1,7 @@
 package usbimager
 
 import (
+	"LiveBuilder/Utils"
 	"fmt"
 	"log"
 	"os"
@@ -12,7 +13,7 @@ type FileObject struct {
 	Info *SystemFileInfo
 }
 
-func (self *FileObject) resize(size int64) error {
+func (self *FileObject) Resize(size int64) error {
 	if self.Type != TypeRegularFile {
 		//might not be an error
 		log.Println("Cant make outfile larger, not of type Regular File")
@@ -33,9 +34,9 @@ func (self *FileObject) resize(size int64) error {
 	}
 	return err
 }
-func (self *FileObject) umountPartitions() error {
+func (self *FileObject) UmountPartitions() error {
 
-	_, stderr, err := run("sudo", "umount", self.Path+"*")
+	_, stderr, err := Utils.Run_command("sudo", "umount", self.Path+"*")
 
 	if err != nil {
 		//erroring doesnt necessarily mean the umount failed, could also mean it wasnt mounted in the first place, fuck it we ball
@@ -44,9 +45,9 @@ func (self *FileObject) umountPartitions() error {
 	}
 	return nil
 }
-func (self *FileObject) wipeFS() error {
+func (self *FileObject) WipeFS() error {
 
-	stdout, stderr, err := run("sudo", "wipefs", "-af", "-b", self.Path)
+	stdout, stderr, err := Utils.Run_command("sudo", "wipefs", "-af", "-b", self.Path)
 
 	if err != nil {
 		log.Printf("wipefs command failed: %+v\n", err)

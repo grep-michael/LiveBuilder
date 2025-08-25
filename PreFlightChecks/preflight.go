@@ -31,7 +31,7 @@ func CheckAll(exitOnError bool) {
 func CheckCommands() error {
 	commands := []string{
 		"lb",
-		"grub-installer",
+		"grub-install",
 		"mkfs.vfat",
 		"mkfs.ext4",
 		"parted",
