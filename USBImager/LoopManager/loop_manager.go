@@ -42,7 +42,6 @@ func (self *LoopManager) OpenLoop() error {
 
 	return nil
 }
-
 func (self *LoopManager) CloseLoop() {
 
 	_, _, err := Utils.Run_command("sudo", "losetup", "-d", self.LoopPath)
@@ -92,4 +91,13 @@ func (self *LoopManager) UnmountPartitions() error {
 }
 func (self *LoopManager) GetPartitions() []PartitionInfo {
 	return self.Partitions
+}
+func (self *LoopManager) GetPartitionsMountPointByLabel(label string) string {
+	self.loadPartitions()
+	for _, part := range self.Partitions {
+		if part.Label == label {
+			return part.GetMountPointsString()
+		}
+	}
+	return ""
 }

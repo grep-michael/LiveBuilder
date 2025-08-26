@@ -14,14 +14,15 @@ type Grub struct {
 
 // Partition represents a disk partition with its properties
 type Partition struct {
-	Label     string `json:"label"`
-	StartAt   int64  `json:"StartAt,omitempty"` // omitempty for optional fields
-	Size      int64  `json:"Size,omitempty"`    // omitempty for optional fields
-	Type      string `json:"Type"`
-	Bootable  bool   `json:"Bootable,omitempty"` // omitempty for optional fields
-	LoopPath  string `json:"LoopPath"`
-	MountPath string `json:"MountPath"`
-	Grub      *Grub  `json:"Grub,omitempty"` // pointer for optional nested struct
+	Label        string `json:"label"`
+	StartAt      int64  `json:"StartAt,omitempty"` // omitempty for optional fields
+	Size         int64  `json:"Size,omitempty"`    // omitempty for optional fields
+	Type         string `json:"Type"`
+	Bootable     bool   `json:"Bootable,omitempty"` // omitempty for optional fields
+	LoopPath     string `json:"LoopPath"`
+	MountPath    string `json:"MountPath"`
+	Grub         *Grub  `json:"Grub,omitempty"` // pointer for optional nested struct
+	IsoPartition bool   `json:"ISOPARTITION,omitempty"`
 }
 
 // DiskImage represents the root disk image structure

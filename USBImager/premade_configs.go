@@ -32,7 +32,8 @@ func NewFat32BootAndExt4System(inFile, outFile string) *formatconfig.DiskImage {
 				"label":"SYSTEM",
 				"Type":"Linux",
 				"LoopPath":"",
-				"MountPath":""
+				"MountPath":"",
+				"ISOPARTITION":true
 			}
 		]
 	}`)

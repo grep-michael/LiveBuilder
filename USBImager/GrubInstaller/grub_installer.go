@@ -25,11 +25,11 @@ func NewGrubInstaller(devicePath string) *GrubInstaller {
 	return grubin
 }
 
-func (self *GrubInstaller) Init() {
+func (self *GrubInstaller) Mount() {
 	self.LoopManager.OpenLoop()
 	self.LoopManager.MountPartitions()
 }
-func (self *GrubInstaller) Finish() {
+func (self *GrubInstaller) Unmount() {
 	self.LoopManager.UnmountPartitions()
 	self.LoopManager.CloseLoop()
 }
@@ -115,6 +115,8 @@ func (self *GrubInstaller) getPartitionByLabel(label string) *loopmanager.Partit
 }
 
 func (self *GrubInstaller) InstallFromConfig(config *formatconfig.DiskImage) error {
+	self.Mount()
+	defer self.Unmount()
 	for _, cfgPart := range config.Partitions {
 
 		if cfgPart.Grub != nil {

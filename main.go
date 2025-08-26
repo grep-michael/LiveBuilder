@@ -44,7 +44,7 @@ func guiMain() {
 func testMain() {
 	imager := usbimager.NewUSBImager()
 
-	cfg := usbimager.NewFat32BootAndExt4System("/tmp/Fake.iso", "/tmp/usb.img")
+	cfg := usbimager.NewFat32BootAndExt4System("/root/.config/LiveBuidler/BuiltISOs/DefaultImage-amd64.hybrid.iso", "/dev/sdd")
 
 	err := imager.ImageUSB(cfg)
 	fmt.Println(err)
