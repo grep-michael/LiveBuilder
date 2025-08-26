@@ -29,7 +29,7 @@ func main() {
 	defer LOGFILE.Close()
 	configureLogging()
 	log.Println("App Start")
-	guiMain()
+	testMain()
 }
 
 func guiMain() {
@@ -43,7 +43,10 @@ func guiMain() {
 
 func testMain() {
 	imager := usbimager.NewUSBImager()
-	err := imager.ImageUSB("/tmp/Fake.iso", "/dev/sdd")
+
+	cfg := usbimager.NewFat32BootAndExt4System("/tmp/Fake.iso", "/tmp/usb.img")
+
+	err := imager.ImageUSB(cfg)
 	fmt.Println(err)
 
 }

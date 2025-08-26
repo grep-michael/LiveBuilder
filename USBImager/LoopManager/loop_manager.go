@@ -59,7 +59,6 @@ func (self *LoopManager) loadPartitions() {
 	}
 	self.Partitions = partitions
 }
-
 func (self *LoopManager) MountPartitions() error {
 	self.loadPartitions()
 	for _, partition := range self.Partitions {
@@ -78,7 +77,6 @@ func (self *LoopManager) MountPartitions() error {
 	self.loadPartitions()
 	return nil
 }
-
 func (self *LoopManager) UnmountPartitions() error {
 	self.loadPartitions()
 	for _, partition := range self.Partitions {
@@ -92,7 +90,6 @@ func (self *LoopManager) UnmountPartitions() error {
 	self.loadPartitions()
 	return nil
 }
-
 func (self *LoopManager) GetPartitions() []PartitionInfo {
 	return self.Partitions
 }

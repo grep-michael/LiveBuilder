@@ -8,6 +8,8 @@ import (
 // Grub represents GRUB bootloader configuration
 type Grub struct {
 	Redirect string `json:"Redirect"`
+	BIOS     bool   `json:"BIOS,omitempty"`
+	UEFI     bool   `json:"UEFI,omitempty"`
 }
 
 // Partition represents a disk partition with its properties
@@ -24,12 +26,12 @@ type Partition struct {
 
 // DiskImage represents the root disk image structure
 type DiskImage struct {
-	Label      string      `json:"label"`
-	LabelID    string      `json:"label_id"`
-	Units      string      `json:"units"`
-	InFile     string      `json:"inFile"`
-	OutFile    string      `json:"outFile"`
-	Partitions []Partition `json:"partitions"`
+	Label      string       `json:"label"`
+	LabelID    string       `json:"label_id"`
+	Units      string       `json:"units"`
+	InFile     string       `json:"inFile"`
+	OutFile    string       `json:"outFile"`
+	Partitions []*Partition `json:"partitions"`
 }
 
 func NewDiskImageFromJSON(jsonString string) (*DiskImage, error) {
@@ -48,16 +50,16 @@ func NewDiskImage(label, labelID, units, inFile, outFile string) *DiskImage {
 		Units:      units,
 		InFile:     inFile,
 		OutFile:    outFile,
-		Partitions: make([]Partition, 0),
+		Partitions: make([]*Partition, 0),
 	}
 }
 
-func (di *DiskImage) AddPartition(partition Partition) {
+func (di *DiskImage) AddPartition(partition *Partition) {
 	di.Partitions = append(di.Partitions, partition)
 }
 
-func NewPartition(label, partType, loopPath, mountPath string) Partition {
-	return Partition{
+func NewPartition(label, partType, loopPath, mountPath string) *Partition {
+	return &Partition{
 		Label:     label,
 		Type:      partType,
 		LoopPath:  loopPath,

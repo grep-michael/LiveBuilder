@@ -26,6 +26,9 @@ func (p *PartitionInfo) GetMountPointsString() string {
 	if len(p.MountPoints) == 0 {
 		return ""
 	}
+	if len(p.MountPoints) == 1 {
+		return p.MountPoints[0]
+	}
 
 	return strings.Join(p.MountPoints, ", ")
 }

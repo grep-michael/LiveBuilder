@@ -1,12 +1,14 @@
 package grubinstaller
 
 import (
+	formatconfig "LiveBuilder/USBImager/FormatConfig"
 	loopmanager "LiveBuilder/USBImager/LoopManager"
 	"LiveBuilder/Utils"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type GrubInstaller struct {
@@ -20,8 +22,6 @@ func NewGrubInstaller(devicePath string) *GrubInstaller {
 		LoopManager: loopmanager.NewLoopManager(devicePath),
 	}
 
-	grubin.Init()
-
 	return grubin
 }
 
@@ -34,25 +34,28 @@ func (self *GrubInstaller) Finish() {
 	self.LoopManager.CloseLoop()
 }
 
-func (self *GrubInstaller) InstallToBootPartition(parition loopmanager.PartitionInfo) {
-
+func (self *GrubInstaller) installUEFIToPartition(parition *loopmanager.PartitionInfo) {
 	if len(parition.MountPoints) <= 0 {
 		log.Println("attemped to install to unmounted parition")
 		return
 	}
-
-	mount_pount := parition.MountPoints[0]
-
+	mount_pount := parition.GetMountPointsString()
 	stdout, stderr, _ := Utils.Run_command("sudo", "grub-install", "--target=i386-pc", "--boot-directory="+mount_pount+"/boot", self.DevicePath)
 	fmt.Println(stdout, stderr)
 
-	stdout, stderr, _ = Utils.Run_command("sudo", "grub-install", "--target=x86_64-efi", "--efi-directory="+mount_pount,
+	self.swapToSignedBinaries(mount_pount)
+}
+
+func (self *GrubInstaller) installBioToPartition(parition *loopmanager.PartitionInfo) {
+	if len(parition.MountPoints) <= 0 {
+		log.Println("attemped to install to unmounted parition")
+		return
+	}
+	mount_pount := parition.GetMountPointsString()
+
+	stdout, stderr, _ := Utils.Run_command("sudo", "grub-install", "--target=x86_64-efi", "--efi-directory="+mount_pount,
 		"--boot-directory="+mount_pount+"/boot", "--removable")
 	fmt.Println(stdout, stderr)
-
-	self.swapToSignedBinaries(mount_pount)
-	self.dropRedirectStub(mount_pount)
-
 }
 
 func (self *GrubInstaller) swapToSignedBinaries(mount_point string) error {
@@ -79,35 +82,26 @@ func (self *GrubInstaller) swapToSignedBinaries(mount_point string) error {
 	return nil
 }
 
-func (self *GrubInstaller) InstallToBootPartitionByLabel(label string) error {
-	partition := self.getPartitionByLabel(label)
-	if partition == nil {
-		log.Printf("Failed to find any partition with name %s\n", label)
-		return fmt.Errorf("Failed to find any partition with name %s\n", label)
+func (self *GrubInstaller) dropRedirectStub(parition *loopmanager.PartitionInfo, grubcfg *formatconfig.Grub) {
+
+	if len(parition.MountPoints) <= 0 {
+		log.Println("attemping to stub to unmounted filesystem")
+		return
 	}
-	self.InstallToBootPartition(*partition)
-	return nil
-}
+	mount_point := parition.GetMountPointsString()
 
-func (self *GrubInstaller) InstallConfigToPartitionByLabel(label string, config string) error {
-	partition := self.getPartitionByLabel(label)
-	if partition == nil {
-		log.Printf("Failed to find any partition with name %s\n", label)
-		return fmt.Errorf("Failed to find any partition with name %s\n", label)
+	data := struct {
+		MainSystem string
+	}{
+		MainSystem: grubcfg.Redirect,
 	}
-	self.InstallConfigToPartition(*partition, config)
-	return nil
-}
 
-func (self *GrubInstaller) InstallConfigToPartition(partition loopmanager.PartitionInfo, config string) {
-
-}
-
-func (self *GrubInstaller) dropRedirectStub(mount_point string) {
-	stub := `search --no-floppy --set=root --label SYSTEM
+	stub := Utils.BuildTemplate(data, `search --no-floppy --set=root --label {{.MainSystem}}
 configfile /boot/grub/grub.cfg
-`
-	writeFile(filepath.Join(mount_point, "boot", "grub", "grub.cfg"), stub, 0644)
+`)
+	log.Printf("Dropping grub redirect stub to \n--%s\n%s\n", mount_point, stub)
+	Utils.WriteFile(filepath.Join(mount_point, "boot", "grub", "grub.cfg"), stub, 0644)
+	time.Sleep(1 * time.Second)
 }
 
 func (self *GrubInstaller) getPartitionByLabel(label string) *loopmanager.PartitionInfo {
@@ -120,11 +114,23 @@ func (self *GrubInstaller) getPartitionByLabel(label string) *loopmanager.Partit
 	return nil
 }
 
-func writeFile(path, content string, perm os.FileMode) {
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		log.Fatal(err)
+func (self *GrubInstaller) InstallFromConfig(config *formatconfig.DiskImage) error {
+	for _, cfgPart := range config.Partitions {
+
+		if cfgPart.Grub != nil {
+			part := self.getPartitionByLabel(cfgPart.Label)
+			if cfgPart.Grub.BIOS {
+				self.installBioToPartition(part)
+			}
+			if cfgPart.Grub.UEFI {
+				self.installUEFIToPartition(part)
+			}
+			if cfgPart.Grub.Redirect != "" {
+				fmt.Println("dropping stub")
+				fmt.Println(cfgPart.Grub.Redirect)
+				self.dropRedirectStub(part, cfgPart.Grub)
+			}
+		}
 	}
-	if err := os.WriteFile(path, []byte(content), perm); err != nil {
-		log.Fatalf("write %s: %v", path, err)
-	}
+	return nil
 }

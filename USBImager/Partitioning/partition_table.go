@@ -11,6 +11,11 @@ const (
 	TABLETYPE_GPT TableType = "gpt"
 )
 
+var TableTypesnameToCode = map[string]TableType{
+	"dos": TABLETYPE_MBR,
+	"gpt": TABLETYPE_GPT,
+}
+
 type PartitionTabelBuilder struct {
 	partitions []*PartitionDefinitionBuilder
 	label      TableType
