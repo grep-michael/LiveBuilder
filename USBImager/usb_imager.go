@@ -1,6 +1,7 @@
 package usbimager
 
 import (
+	fileobject "LiveBuilder/USBImager/FileObject"
 	grubinstaller "LiveBuilder/USBImager/GrubInstaller"
 	partitioning "LiveBuilder/USBImager/Partitioning"
 	"fmt"
@@ -33,25 +34,25 @@ func (self *USBImager) ImageUSB(iso_file, out_file string) error {
 
 }
 
-func (self *USBImager) initalizeFileInfos(iso_file, out_file string) (FileObject, FileObject, error) {
-	isoFileInfo, err := NewFileObject(iso_file, false)
+func (self *USBImager) initalizeFileInfos(iso_file, out_file string) (fileobject.FileObject, fileobject.FileObject, error) {
+	isoFileInfo, err := fileobject.NewFileObject(iso_file, false)
 	if err != nil {
 		return errorFileObject(err)
 	}
-	outFileInfo, err := NewFileObject(out_file, true)
+	outFileInfo, err := fileobject.NewFileObject(out_file, true)
 	if err != nil {
 		return errorFileObject(err)
 	}
-	if isoFileInfo.Type != TypeRegularFile {
+	if isoFileInfo.Type != fileobject.TypeRegularFile {
 		return errorFileObject(fmt.Errorf("iso file type not support: %s\n", isoFileInfo.Type.String()))
 	}
-	if (1<<outFileInfo.Type)&ALLOWEDTYPES == 0 {
+	if (1<<outFileInfo.Type)&fileobject.ALLOWEDTYPES == 0 {
 		return errorFileObject(fmt.Errorf("destinated file type not support: %s\n", outFileInfo.Type.String()))
 	}
 	return isoFileInfo, outFileInfo, nil
 }
 
-func (self *USBImager) prepOutFile(outFile FileObject, outFileSize int64) error {
+func (self *USBImager) prepOutFile(outFile fileobject.FileObject, outFileSize int64) error {
 	if outFileSize == 0 {
 		outFileSize = 2 * 1024 * 1024 * 1024 //4gb default
 	}
@@ -64,7 +65,7 @@ func (self *USBImager) prepOutFile(outFile FileObject, outFileSize int64) error 
 		}
 	}
 	//if its a storage device unmount it and wipe it
-	if outFile.Type == TypeBlockDevice {
+	if outFile.Type == fileobject.TypeBlockDevice {
 		err := outFile.UmountPartitions()
 		if err != nil {
 			return err
@@ -82,6 +83,6 @@ func (self *USBImager) prepOutFile(outFile FileObject, outFileSize int64) error 
 	return nil
 }
 
-func errorFileObject(err error) (FileObject, FileObject, error) {
-	return FileObject{}, FileObject{}, err
+func errorFileObject(err error) (fileobject.FileObject, fileobject.FileObject, error) {
+	return fileobject.FileObject{}, fileobject.FileObject{}, err
 }
