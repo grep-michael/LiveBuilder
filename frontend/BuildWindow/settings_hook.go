@@ -18,37 +18,23 @@ type SettingsWidget struct {
 	window       fyne.Window
 	buildManager *buildmanager.BuildManager
 	// Checkbox data
-	checkboxes []*widget.Check
-	checkOrder []string
-	checkData  map[string]bool
+	radioGroup     *widget.RadioGroup
+	options        []string
+	selectedOption string
 }
 
 func NewRightClickWidget(window fyne.Window, buildManager *buildmanager.BuildManager) *SettingsWidget {
 
-	checkData := map[string]bool{
-		"lb bootstrap":          true,
-		"lb chroot":             true,
-		"lb binary_chroot":      false,
-		"lb binary_rootfs":      false,
-		"lb binary_linux-image": false,
-		"lb binary":             true,
-		"lb source":             true,
-	}
-	checkOrder := []string{
-		"lb bootstrap",
-		"lb chroot",
-		"lb binary_chroot",
-		"lb binary_rootfs",
-		"lb binary_linux-image",
-		"lb binary",
-		"lb source",
+	buildMap := buildmanager.BuildListMap
+	options := make([]string, 0, len(buildMap))
+	for k := range buildMap {
+		options = append(options, k)
 	}
 
 	w := &SettingsWidget{
 		content:      widget.NewIcon(theme.SettingsIcon()),
 		window:       window,
-		checkData:    checkData,
-		checkOrder:   checkOrder,
+		options:      options,
 		buildManager: buildManager,
 	}
 	w.ExtendBaseWidget(w)
@@ -93,20 +79,17 @@ func (w *SettingsWidget) showContextMenu(pos fyne.Position) {
 }
 
 func (w *SettingsWidget) buildCheckList() *fyne.Container {
-	w.checkboxes = make([]*widget.Check, len(w.checkData))
-	var menuItems []fyne.CanvasObject
 
-	for _, key := range w.checkOrder {
-
-		check := widget.NewCheck(key, func(checked bool) {
-			w.checkData[key] = checked
-		})
-		check.SetChecked(w.checkData[key])
-		w.checkboxes = append(w.checkboxes, check)
-		menuItems = append(menuItems, check)
+	radio := widget.NewRadioGroup(w.options, func(value string) {
+		w.selectedOption = value
+	})
+	if w.selectedOption == "" {
+		radio.SetSelected(buildmanager.DefaultBuildList)
+	} else {
+		radio.SetSelected(w.selectedOption)
 	}
 
-	return container.NewVBox(menuItems...)
+	return container.NewVBox(radio)
 }
 
 func (w *SettingsWidget) buildActionButtons() *fyne.Container {
@@ -116,10 +99,6 @@ func (w *SettingsWidget) buildActionButtons() *fyne.Container {
 	})
 
 	return container.NewVBox(cleanBtn)
-}
-
-func (w *SettingsWidget) GetCheckboxStates() map[string]bool {
-	return w.checkData
 }
 
 type settingsRender struct {

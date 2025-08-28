@@ -4,7 +4,7 @@ package buildmanager
 Master object for doing all the backend building
 1. imports all the custom files
 2. runs the nessacary live-build commands
-3. formats resulting files our specific desired output
+3. formats resulting files our specific desired output //TODO :)
 */
 
 import (
@@ -104,24 +104,11 @@ func (self *BuildManager) InitializeBuild(buildPath string) {
 	}
 }
 
-func (self *BuildManager) BuildConditional(command_map map[string]bool) {
-	cmd_order := []string{
-		"lb bootstrap",
-		"lb chroot",
-		"lb binary_chroot",
-		"lb binary_rootfs",
-		"lb binary_syslinux",
-		"lb binary_grub",
-		"lb binary_iso",
-	}
-	var build_commands []*exec.Cmd
-	for _, command := range cmd_order {
-		if command_map[command] {
-			build_commands = append(build_commands, stringToCmd(command))
-		}
-	}
+func (self *BuildManager) BuildConditional(commandListName string) {
 
-	if err := self.lbBuildManager.BuildConditional(build_commands); err != nil {
+	commands := BuildListMap[commandListName]
+
+	if err := self.lbBuildManager.BuildConditional(commands); err != nil {
 		self.updateChannel <- LogUpdate{
 			Append:  true,
 			Message: fmt.Sprintf("Error occured in lb build: %v\n", err),
@@ -140,13 +127,13 @@ func (self *BuildManager) Build(buildPath string) {
 		}
 		return
 	}
-	if err := self.copyISO(); err != nil {
-		self.updateChannel <- LogUpdate{
-			Append:  true,
-			Message: fmt.Sprintf("Error occured copying iso file: %v\n", err),
-		}
-		return
-	}
+	//if err := self.copyISO(); err != nil {
+	//	self.updateChannel <- LogUpdate{
+	//		Append:  true,
+	//		Message: fmt.Sprintf("Error occured copying iso file: %v\n", err),
+	//	}
+	//	return
+	//}
 
 }
 
@@ -184,6 +171,67 @@ func (self *BuildManager) copyISO() error {
 	return nil
 }
 
+func (self *BuildManager) InitializeBuildPath(buildPath string) error {
+	if buildPath == "" {
+		self.buildPath = self.GetDefaultBuildPath()
+		log.Printf("Using default build directory: %s\n", self.buildPath)
+	} else {
+		self.buildPath = buildPath
+	}
+
+	if err := self.CleanBuild(); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(self.buildPath, 0777); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (self *BuildManager) CleanBuild() error {
+
+	_, err := os.Stat(self.buildPath)
+	if err != nil {
+		//dir doesnt exists yet so no need to nuke
+		return nil
+	}
+
+	cmd := exec.Command("lb", "clean")
+	cmd.Env = os.Environ()
+	cmd.Dir = self.buildPath
+	if err := cmd.Start(); err != nil {
+		log.Printf("Error cleaning command: %v\n", err)
+		return err
+	}
+	return cmd.Wait()
+}
+
+func (self *BuildManager) NukeBuild() error {
+	log.Printf("Nuking build folder: %s\n", self.buildPath)
+	if self.buildPath == "" {
+		return nil
+	}
+	self.UnmountBuildFolders()
+	if err := os.RemoveAll(self.buildPath); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (self *BuildManager) UnmountBuildFolders() {
+	umount_commands := []string{
+		"umount chroot/proc",
+		"umount chroot/sys",
+		"umount chroot/dev/pts",
+	}
+	for _, strcmd := range umount_commands {
+		cmd := stringToCmd(strcmd)
+		cmd.Dir = self.buildPath
+		cmd.Run() //ignore error if commanded failed, could be that we attempted to unmount a not mounted dir
+	}
+
+}
+
 func (self *BuildManager) GetSubscriber() <-chan LogUpdate {
 	self.subMutex.Lock()
 	defer self.subMutex.Unlock()
@@ -204,44 +252,6 @@ func (self *BuildManager) listenForUpdates() {
 		}
 		self.subMutex.RUnlock()
 	}
-}
-
-func (self *BuildManager) InitializeBuildPath(buildPath string) error {
-	if buildPath == "" {
-		self.buildPath = self.GetDefaultBuildPath()
-		log.Printf("Using default build directory: %s\n", self.buildPath)
-	} else {
-		self.buildPath = buildPath
-	}
-
-	if err := self.NukeBuild(); err != nil {
-		return err
-	}
-	if err := os.MkdirAll(self.buildPath, 0777); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (self *BuildManager) NukeBuild() error {
-	//if err := os.RemoveAll(self.buildPath); err != nil {
-	//	return err
-	//}
-	//return nil
-	_, err := os.Stat(self.buildPath)
-	if err != nil {
-		//dir doesnt exists yet so no need to nuke
-		return nil
-	}
-
-	cmd := exec.Command("lb", "clean", "--purge")
-	cmd.Env = os.Environ()
-	cmd.Dir = self.buildPath
-	if err := cmd.Start(); err != nil {
-		log.Printf("Error starting command: %v\n", err)
-		return err
-	}
-	return cmd.Wait()
 }
 
 func copyFile(src, dst string) error {

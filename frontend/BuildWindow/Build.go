@@ -164,7 +164,7 @@ func (self *BuildWindow) buildMainBuildArea() *fyne.Container {
 
 		go func() {
 			self.buildManager.InitializeBuild(self.buildPath)
-			self.buildManager.BuildConditional(self.settings.GetCheckboxStates())
+			self.buildManager.BuildConditional(self.settings.selectedOption)
 			self.buildStatusLabel.SetText("Building Finished!")
 
 		}()

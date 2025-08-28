@@ -10,15 +10,21 @@ import (
 type BuildList []*exec.Cmd
 
 var FullBuildList = BuildList{
-	exec.Command("lb", []string{"build"}...),
+	exec.Command("lb", []string{"bootstrap"}...),
+	exec.Command("lb", []string{"chroot"}...),
+	exec.Command("lb", []string{"binary"}...),
+	exec.Command("lb", []string{"installer"}...),
+	exec.Command("lb", []string{"source"}...),
 }
 var FilesystemBuild = BuildList{
 	exec.Command("lb", []string{"bootstrap"}...),
 	exec.Command("lb", []string{"chroot"}...),
 	exec.Command("lb", []string{"binary_chroot"}...),
 	exec.Command("lb", []string{"binary_rootfs"}...),
-	exec.Command("lb", []string{"binary_linux-image"}...),
+	//exec.Command("lb", []string{"binary_linux-image"}...),
 }
+
+var DefaultBuildList = "FullBuild"
 
 var BuildListMap = map[string]BuildList{
 	"FullBuild":       FullBuildList,
@@ -88,7 +94,7 @@ func (self *LBBuildManager) BuildConditional(commands BuildList) error {
 }
 
 func (self *LBBuildManager) Build() error {
-	err := self.BuildConditional(FullBuildList)
+	err := self.BuildConditional(BuildListMap[DefaultBuildList])
 	return err
 }
 
