@@ -29,7 +29,7 @@ func main() {
 	defer LOGFILE.Close()
 	configureLogging()
 	log.Println("App Start")
-	testMain()
+	guiMain()
 }
 
 func guiMain() {

@@ -15,6 +15,9 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
+
+	//"os/exec"
 	"path/filepath"
 	"sync"
 )
@@ -59,7 +62,7 @@ func NewBuilder() *BuildManager {
 func (self *BuildManager) GetDefaultBuildPath() string {
 	appdata, _ := filesystem.GetAppDataDir()
 	buildpath := filepath.Join(appdata, "build")
-
+	return buildpath
 	// /tmp/ has nodev flag meaning lb build wont work on it
 	path, err := os.MkdirTemp(buildpath, "buildtemp-*")
 	if err != nil {
@@ -72,8 +75,7 @@ func (self *BuildManager) GetDefaultBuildPath() string {
 
 }
 
-func (self *BuildManager) Build(buildPath string) {
-
+func (self *BuildManager) InitializeBuild(buildPath string) {
 	if err := self.InitializeBuildPath(buildPath); err != nil {
 		self.updateChannel <- LogUpdate{
 			Append:  false,
@@ -100,6 +102,37 @@ func (self *BuildManager) Build(buildPath string) {
 		}
 		return
 	}
+}
+
+func (self *BuildManager) BuildConditional(command_map map[string]bool) {
+	cmd_order := []string{
+		"lb bootstrap",
+		"lb chroot",
+		"lb binary_chroot",
+		"lb binary_rootfs",
+		"lb binary_syslinux",
+		"lb binary_grub",
+		"lb binary_iso",
+	}
+	var build_commands []*exec.Cmd
+	for _, command := range cmd_order {
+		if command_map[command] {
+			build_commands = append(build_commands, stringToCmd(command))
+		}
+	}
+
+	if err := self.lbBuildManager.BuildConditional(build_commands); err != nil {
+		self.updateChannel <- LogUpdate{
+			Append:  true,
+			Message: fmt.Sprintf("Error occured in lb build: %v\n", err),
+		}
+		return
+	}
+
+}
+
+func (self *BuildManager) Build(buildPath string) {
+
 	if err := self.lbBuildManager.Build(); err != nil {
 		self.updateChannel <- LogUpdate{
 			Append:  true,
@@ -191,12 +224,19 @@ func (self *BuildManager) InitializeBuildPath(buildPath string) error {
 }
 
 func (self *BuildManager) NukeBuild() error {
-	if err := os.RemoveAll(self.buildPath); err != nil {
-		return err
+	//if err := os.RemoveAll(self.buildPath); err != nil {
+	//	return err
+	//}
+	//return nil
+	_, err := os.Stat(self.buildPath)
+	if err != nil {
+		//dir doesnt exists yet so no need to nuke
+		return nil
 	}
-	return nil
-	cmd := exec.Command("lb", "clean")
+
+	cmd := exec.Command("lb", "clean", "--purge")
 	cmd.Env = os.Environ()
+	cmd.Dir = self.buildPath
 	if err := cmd.Start(); err != nil {
 		log.Printf("Error starting command: %v\n", err)
 		return err
@@ -238,4 +278,17 @@ func copyFile(src, dst string) error {
 	}
 
 	return nil
+}
+
+func stringToCmd(cmdString string) *exec.Cmd {
+	parts := strings.Fields(cmdString)
+	if len(parts) == 0 {
+		return nil
+	}
+
+	if len(parts) == 1 {
+		return exec.Command(parts[0])
+	}
+
+	return exec.Command(parts[0], parts[1:]...)
 }

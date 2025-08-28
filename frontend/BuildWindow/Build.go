@@ -3,15 +3,15 @@ package buildwindow
 import (
 	buildmanager "LiveBuilder/BuildManager"
 	logger "LiveBuilder/BuildManager/Logger"
+	"log"
+	"strings"
+	"sync"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"log"
-	"strings"
-	"sync"
-	"time"
 )
 
 type BuildWindow struct {
@@ -23,8 +23,7 @@ type BuildWindow struct {
 	logContent        strings.Builder
 	buildManager      *buildmanager.BuildManager
 	logScroll         *container.Scroll
-	//buildLogText      *widget.RichText
-	//livebuilder       *execution.LiveBuilder
+	settings          *SettingsWidget
 }
 
 func NewBuildWindow(window fyne.Window) *fyne.Container {
@@ -35,20 +34,20 @@ func NewBuildWindow(window fyne.Window) *fyne.Container {
 	}
 
 	build_window.logWidget = logger.NewLogView(500)
-
 	build_window.logScroll = container.NewScroll(build_window.logWidget)
 	build_window.logScroll.SetMinSize(fyne.NewSize(600, 500))
 
 	build_window.buildManager = buildmanager.NewBuilder()
 
 	go build_window.startLogSubscriber()
-	//go build_window.startLogSubscriberWithBatching()
-	filesectionHeader := build_window.buildFolderSelectionHeader()
+	build_window.settings = NewRightClickWidget(window, build_window.buildManager)
+
+	headers := build_window.buildFolderSelectionHeader(window)
 	buildArea := build_window.buildMainBuildArea()
-	return container.NewBorder(filesectionHeader, nil, nil, nil, buildArea)
+	return container.NewBorder(headers, nil, nil, nil, buildArea)
 }
 
-func (self *BuildWindow) buildFolderSelectionHeader() *fyne.Container {
+func (self *BuildWindow) buildFolderSelectionHeader(window fyne.Window) *fyne.Container {
 	choose_folder_btn := widget.NewButton("Choose Build Location", func() {
 		dialog.ShowFolderOpen(func(folder fyne.ListableURI, err error) {
 			if err != nil {
@@ -63,9 +62,9 @@ func (self *BuildWindow) buildFolderSelectionHeader() *fyne.Container {
 			self.buildPath = folderPath
 		}, self.window)
 	})
+	vbox := container.NewVBox(choose_folder_btn, self.selectedPathLabel)
 
-	hbox := container.NewVBox(choose_folder_btn, self.selectedPathLabel)
-
+	hbox := container.NewBorder(nil, nil, nil, self.settings, vbox)
 	return hbox
 }
 
@@ -164,9 +163,8 @@ func (self *BuildWindow) buildMainBuildArea() *fyne.Container {
 		self.buildStatusLabel.SetText("Building...")
 
 		go func() {
-			self.buildManager.Build(self.buildPath)
-			log.Println("all building done, display final message")
-
+			self.buildManager.InitializeBuild(self.buildPath)
+			self.buildManager.BuildConditional(self.settings.GetCheckboxStates())
 			self.buildStatusLabel.SetText("Building Finished!")
 
 		}()

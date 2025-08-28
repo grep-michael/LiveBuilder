@@ -1,3 +1,13 @@
+lb clean
+lb bootstrap
+lb chroot
+lb binary_chroot
+lb binary_rootfs
+lb binary_syslinux
+lb binary_grub
+lb binary_iso
+
+
 package main
 
 import (

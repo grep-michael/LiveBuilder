@@ -1,15 +1,29 @@
 package buildmanager
 
-/*
-Actually executes lb build --verbose --debug
-*/
-
 import (
 	"fmt"
 	"log"
 	"os/exec"
 	"sync"
 )
+
+type BuildList []*exec.Cmd
+
+var FullBuildList = BuildList{
+	exec.Command("lb", []string{"build"}...),
+}
+var FilesystemBuild = BuildList{
+	exec.Command("lb", []string{"bootstrap"}...),
+	exec.Command("lb", []string{"chroot"}...),
+	exec.Command("lb", []string{"binary_chroot"}...),
+	exec.Command("lb", []string{"binary_rootfs"}...),
+	exec.Command("lb", []string{"binary_linux-image"}...),
+}
+
+var BuildListMap = map[string]BuildList{
+	"FullBuild":       FullBuildList,
+	"FilesystemBuild": FilesystemBuild,
+}
 
 type LBBuildManager struct {
 	buildPath     string
@@ -26,7 +40,8 @@ func (self *LBBuildManager) SetBuildPath(buildPath string) {
 	self.buildPath = buildPath
 }
 
-func (self *LBBuildManager) Build() error {
+func (self *LBBuildManager) BuildConditional(commands BuildList) error {
+
 	if self.buildPath == "" {
 		return fmt.Errorf("buildPath Not set")
 	}
@@ -35,8 +50,6 @@ func (self *LBBuildManager) Build() error {
 		Append:  false,
 		Message: "Running lb build",
 	}
-
-	build_command := self.makeBuildCommand()
 
 	cmdOutChan := make(chan CommandOut, 20)
 	var wg sync.WaitGroup
@@ -53,17 +66,30 @@ func (self *LBBuildManager) Build() error {
 			}
 		}
 	}()
-	err := executeCommand(build_command, cmdOutChan)
-	close(cmdOutChan)
-	wg.Wait()
+	for _, command := range commands {
+		command.Dir = self.buildPath
+		err := executeCommand(command, cmdOutChan)
+		if err != nil {
+			close(cmdOutChan)
+			wg.Wait()
+			return err
+		}
+	}
 
 	self.updateChannel <- LogUpdate{
 		Append:  true,
 		Message: "lb build finished!",
 	}
 
-	return err
+	close(cmdOutChan)
+	wg.Wait()
+	return nil
 
+}
+
+func (self *LBBuildManager) Build() error {
+	err := self.BuildConditional(FullBuildList)
+	return err
 }
 
 func (self *LBBuildManager) transformToLogUpdate(cmdout CommandOut) LogUpdate {
@@ -77,11 +103,4 @@ func (self *LBBuildManager) transformToLogUpdate(cmdout CommandOut) LogUpdate {
 		Append:  true,
 		Message: msg,
 	}
-}
-
-func (self *LBBuildManager) makeBuildCommand() *exec.Cmd {
-	//cmd := exec.Command("lb", []string{"build", "--verbose", "--debug"}...)
-	cmd := exec.Command("lb", []string{"build"}...)
-	cmd.Dir = self.buildPath
-	return cmd
 }
