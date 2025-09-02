@@ -3,10 +3,7 @@ package main
 import (
 	filesystem "LiveBuilder/Filesystem"
 	preflightchecks "LiveBuilder/PreFlightChecks"
-	usbimager "LiveBuilder/USBImager"
-
 	frontend "LiveBuilder/frontend"
-	"fmt"
 	"log"
 	"os"
 )
@@ -39,14 +36,4 @@ func guiMain() {
 
 	mainWindow := frontend.NewMainWindow("Live Builder")
 	mainWindow.ShowAndRun()
-}
-
-func testMain() {
-	imager := usbimager.NewUSBImager()
-
-	cfg := usbimager.NewFat32BootAndExt4System("/root/.config/LiveBuidler/BuiltISOs/DefaultImage-amd64.hybrid.iso", "/dev/sdd")
-
-	err := imager.ImageUSB(cfg)
-	fmt.Println(err)
-
 }

@@ -3,15 +3,12 @@ package buildwindow
 import (
 	buildmanager "LiveBuilder/BuildManager"
 	logger "LiveBuilder/BuildManager/Logger"
-	"log"
-	"strings"
-	"sync"
-	"time"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"log"
+	"strings"
 )
 
 type BuildWindow struct {
@@ -42,12 +39,12 @@ func NewBuildWindow(window fyne.Window) *fyne.Container {
 	go build_window.startLogSubscriber()
 	build_window.settings = NewRightClickWidget(window, build_window.buildManager)
 
-	headers := build_window.buildFolderSelectionHeader(window)
+	headers := build_window.buildFolderSelectionHeader()
 	buildArea := build_window.buildMainBuildArea()
 	return container.NewBorder(headers, nil, nil, nil, buildArea)
 }
 
-func (self *BuildWindow) buildFolderSelectionHeader(window fyne.Window) *fyne.Container {
+func (self *BuildWindow) buildFolderSelectionHeader() *fyne.Container {
 	choose_folder_btn := widget.NewButton("Choose Build Location", func() {
 		dialog.ShowFolderOpen(func(folder fyne.ListableURI, err error) {
 			if err != nil {
@@ -66,81 +63,6 @@ func (self *BuildWindow) buildFolderSelectionHeader(window fyne.Window) *fyne.Co
 
 	hbox := container.NewBorder(nil, nil, nil, self.settings, vbox)
 	return hbox
-}
-
-func (self *BuildWindow) startLogSubscriberWithBatching() {
-	/*
-		began working on batching, but never got it completed, and changing to the LogView custom widget
-		made lots of small updates more mangable such that i never felt the need to finish this function
-	*/
-	subscriber := self.buildManager.GetSubscriber()
-
-	const (
-		maxBatchSize  = 20
-		flushInterval = 3 * time.Second
-	)
-
-	var pendingUpdates []buildmanager.LogUpdate
-	var mu sync.Mutex
-	var lastFlush time.Time = time.Now()
-
-	flushUpdates := func() {
-		mu.Lock()
-		defer mu.Unlock()
-
-		if len(pendingUpdates) == 0 {
-			return
-		}
-
-		updates := make([]buildmanager.LogUpdate, len(pendingUpdates))
-		copy(updates, pendingUpdates)
-		pendingUpdates = pendingUpdates[:0]
-		lastFlush = time.Now()
-
-		for _, update := range updates {
-			fyne.Do(func() {
-
-			})
-			if !update.Append {
-				self.logWidget.Clear()
-			}
-			self.logWidget.AppendLine(update.Message)
-		}
-	}
-
-	// Periodic flush goroutine
-	go func() {
-		ticker := time.NewTicker(1 * time.Second) // Check every second
-		defer ticker.Stop()
-
-		for range ticker.C {
-			mu.Lock()
-			shouldFlush := len(pendingUpdates) > 0 && time.Since(lastFlush) >= flushInterval
-			mu.Unlock()
-
-			if shouldFlush {
-				flushUpdates()
-			}
-		}
-	}()
-
-	// Collect updates
-	for update := range subscriber {
-		mu.Lock()
-		pendingUpdates = append(pendingUpdates, buildmanager.LogUpdate{
-			Message: update.Message,
-			Append:  update.Append,
-		})
-		shouldFlush := len(pendingUpdates) >= maxBatchSize
-		mu.Unlock()
-
-		if shouldFlush {
-			flushUpdates()
-		}
-	}
-
-	// Final flush
-	flushUpdates()
 }
 
 func (self *BuildWindow) startLogSubscriber() {
@@ -166,7 +88,6 @@ func (self *BuildWindow) buildMainBuildArea() *fyne.Container {
 			self.buildManager.InitializeBuild(self.buildPath)
 			self.buildManager.BuildConditional(self.settings.selectedOption)
 			self.buildStatusLabel.SetText("Building Finished!")
-
 		}()
 	})
 

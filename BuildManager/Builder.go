@@ -15,10 +15,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strings"
-
-	//"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
