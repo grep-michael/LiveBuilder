@@ -1,0 +1,8 @@
+{
+    "install_path": "/usr/local/bin/resolution_setter.sh",
+    "tags": [
+      "Scripts"
+    ],
+    "description": "Script to auto set resoltuion",
+    "file_type": "config"
+  }
