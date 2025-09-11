@@ -4,5 +4,5 @@
       "Scripts"
     ],
     "description": "desktop to start resoltuion setter",
-    "file_type": "config"
+    "file_type": "autostart"
   }
