@@ -32,10 +32,11 @@ func NewRightClickWidget(window fyne.Window, buildManager *buildmanager.BuildMan
 	}
 
 	w := &SettingsWidget{
-		content:      widget.NewIcon(theme.SettingsIcon()),
-		window:       window,
-		options:      options,
-		buildManager: buildManager,
+		content:        widget.NewIcon(theme.SettingsIcon()),
+		window:         window,
+		options:        options,
+		selectedOption: "FullBuild",
+		buildManager:   buildManager,
 	}
 	w.ExtendBaseWidget(w)
 	w.Resize(fyne.NewSize(100, 100))

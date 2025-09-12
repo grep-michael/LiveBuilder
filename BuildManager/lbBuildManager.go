@@ -7,28 +7,41 @@ import (
 	"sync"
 )
 
-type BuildList []*exec.Cmd
+type CommandSpec struct {
+	Name string
+	Args []string
+}
+
+func (cs CommandSpec) CreateCmd() *exec.Cmd {
+	return exec.Command(cs.Name, cs.Args...)
+}
+
+type BuildList []CommandSpec
 
 var FullBuildList = BuildList{
-	exec.Command("lb", []string{"bootstrap"}...),
-	exec.Command("lb", []string{"chroot"}...),
-	exec.Command("lb", []string{"binary"}...),
-	exec.Command("lb", []string{"installer"}...),
-	exec.Command("lb", []string{"source"}...),
+	{Name: "lb", Args: []string{"bootstrap"}},
+	{Name: "lb", Args: []string{"chroot"}},
+	{Name: "lb", Args: []string{"binary"}},
+	{Name: "lb", Args: []string{"installer"}},
+	{Name: "lb", Args: []string{"source"}},
 }
+
 var FilesystemBuild = BuildList{
-	exec.Command("lb", []string{"bootstrap"}...),
-	exec.Command("lb", []string{"chroot"}...),
-	exec.Command("lb", []string{"binary_chroot"}...),
-	exec.Command("lb", []string{"binary_rootfs"}...),
-	//exec.Command("lb", []string{"binary_linux-image"}...),
+	{Name: "lb", Args: []string{"bootstrap"}},
+	{Name: "lb", Args: []string{"chroot"}},
+	{Name: "lb", Args: []string{"binary_chroot"}},
+	{Name: "lb", Args: []string{"binary_rootfs"}},
+	{Name: "lb", Args: []string{"binary_linux-image"}},
+	{Name: "lb", Args: []string{"binary_manifest"}},
 }
+var JustConfig = BuildList{}
 
 var DefaultBuildList = "FullBuild"
 
 var BuildListMap = map[string]BuildList{
 	"FullBuild":       FullBuildList,
 	"FilesystemBuild": FilesystemBuild,
+	"JustConfigure":   JustConfig,
 }
 
 type LBBuildManager struct {
@@ -72,7 +85,8 @@ func (self *LBBuildManager) BuildConditional(commands BuildList) error {
 			}
 		}
 	}()
-	for _, command := range commands {
+	for _, commandSpec := range commands {
+		command := commandSpec.CreateCmd()
 		command.Dir = self.buildPath
 		err := executeCommand(command, cmdOutChan)
 		if err != nil {

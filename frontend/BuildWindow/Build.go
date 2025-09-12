@@ -3,12 +3,13 @@ package buildwindow
 import (
 	buildmanager "LiveBuilder/BuildManager"
 	logger "LiveBuilder/BuildManager/Logger"
+	"log"
+	"strings"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"log"
-	"strings"
 )
 
 type BuildWindow struct {

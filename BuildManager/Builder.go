@@ -125,6 +125,7 @@ func (self *BuildManager) Build(buildPath string) {
 		}
 		return
 	}
+
 	//if err := self.copyISO(); err != nil {
 	//	self.updateChannel <- LogUpdate{
 	//		Append:  true,
@@ -133,6 +134,8 @@ func (self *BuildManager) Build(buildPath string) {
 	//	return
 	//}
 
+	//finalize clean up
+	self.UnmountBuildFolders()
 }
 
 func (self *BuildManager) copyISO() error {

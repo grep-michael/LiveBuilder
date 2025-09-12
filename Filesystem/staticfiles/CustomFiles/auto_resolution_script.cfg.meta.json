@@ -1,5 +1,5 @@
 {
-    "install_path": "/usr/local/bin/resolution_setter.sh",
+    "install_path": "config/includes.chroot/usr/local/bin/resolution_setter.sh",
     "tags": [
       "Scripts"
     ],
