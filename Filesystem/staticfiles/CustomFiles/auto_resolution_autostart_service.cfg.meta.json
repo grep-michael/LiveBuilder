@@ -1,0 +1,8 @@
+{
+    "install_path": "config/includes.chroot/etc/systemd/system/resolution-setter.service",
+    "tags": [
+      "autostart"
+    ],
+    "description": "desktop to start resoltuion setter",
+    "file_type": "autostart"
+  }

@@ -1,7 +1,7 @@
 {
     "install_path": "config/includes.chroot/etc/xdg/autostart/resolution-setter.desktop",
     "tags": [
-      "Scripts"
+      "autostart"
     ],
     "description": "desktop to start resoltuion setter",
     "file_type": "autostart"
