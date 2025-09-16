@@ -3,7 +3,6 @@ package filesystem
 import (
 	"io/fs"
 	"log"
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -26,37 +25,51 @@ func (c *DirectoryEntry) FullPath() string {
 }
 
 func ScanDirectory(dirPath string) ([]DirectoryEntry, error) {
-	entries, err := os.ReadDir(dirPath)
-	if err != nil {
-		return nil, err
-	}
-
 	var customEntries []DirectoryEntry
 
-	for _, entry := range entries {
-
-		if strings.HasSuffix(entry.Name(), ".meta.json") {
-			continue
-		}
-
-		customEntry, err := NewCustomDirEntryFromEntry(entry, dirPath)
+	err := filepath.WalkDir(dirPath, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
-			continue
+			log.Printf("Error accessing path %s: %v\n", path, err)
+			return nil // Continue walking despite errors
 		}
+
+		// Skip .meta.json files
+		if strings.HasSuffix(entry.Name(), ".meta.json") {
+			return nil
+		}
+
+		if entry.IsDir() {
+			return nil
+		}
+
+		// Skip the root directory itself
+		if path == dirPath {
+			return nil
+		}
+
+		customEntry, err := NewCustomDirEntryFromPath(path, entry)
+		if err != nil {
+			log.Printf("Failed to create directory entry for %s: %v\n", path, err)
+			return nil // Continue walking
+		}
+
 		metaData, err := LoadFileMetadata(customEntry.fullPath)
 		if err != nil {
 			log.Printf("Failed to load meta data for file %s, with error %v\n", customEntry.fullPath, err)
 		}
 		customEntry.MetaData = metaData
+
 		customEntries = append(customEntries, customEntry)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return customEntries, nil
-
 }
-
-func NewCustomDirEntryFromEntry(entry fs.DirEntry, basePath string) (DirectoryEntry, error) {
-	fullPath := filepath.Join(basePath, entry.Name())
+func NewCustomDirEntryFromPath(fullPath string, entry fs.DirEntry) (DirectoryEntry, error) {
 	info, err := entry.Info()
 	if err != nil {
 		return DirectoryEntry{}, err
