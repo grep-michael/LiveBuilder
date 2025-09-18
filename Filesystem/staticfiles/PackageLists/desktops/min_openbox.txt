@@ -1,0 +1,7 @@
+xorg
+openbox
+xinit
+dbus-x11
+xfce4-terminal
+desktop-file-utils
+dex

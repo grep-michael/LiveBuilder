@@ -38,3 +38,13 @@ firmware-siano
 firmware-sof-signed
 #firmware-tomu
 firmware-zd1211
+base-files
+base-passwd
+bash
+coreutils
+util-linux
+mount
+init
+systemd
+systemd-sysv
+udev

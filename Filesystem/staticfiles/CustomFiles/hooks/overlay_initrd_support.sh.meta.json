@@ -1,0 +1,8 @@
+{
+    "install_path": "config/includes.chroot/usr/share/initramfs-tools/scripts/init-bottom/01overlay",
+    "tags": [
+      "Scripts"
+    ],
+    "description": "Configuration file",
+    "file_type": "config"
+  }
