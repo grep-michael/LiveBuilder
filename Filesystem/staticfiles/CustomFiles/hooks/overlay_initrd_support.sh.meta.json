@@ -1,5 +1,5 @@
 {
-    "install_path": "config/includes.chroot/usr/share/initramfs-tools/scripts/init-bottom/01overlay",
+    "install_path": "config/includes.chroot/etc/initramfs-tools/scripts/live-bottom/9991-overlayparser",
     "tags": [
       "Scripts"
     ],

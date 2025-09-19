@@ -1,3 +1,3 @@
 #!/bin/sh
 set -e
-chmod +x /usr/share/initramfs-tools/scripts/live-premount/01overlay
+chmod +x /etc/initramfs-tools/scripts/live-bottom/9991-overlayparser
