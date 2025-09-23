@@ -9,7 +9,6 @@ lximage-qt
 qterminal
 qpdfview
 firefox-esr
-lxqt-connman-applet
 pavucontrol-qt
 lxqt-powermanagement
 lxqt-config
@@ -18,23 +17,18 @@ lxqt-config
 memtest86+
 stress
 stress-ng
-cpuburn
 i2c-tools
 read-edid
 dmidecode
 acpi
 lm-sensors
-hddtemp
 fancontrol
-mcelog
 edac-utils
 rasdaemon
 
 ## Storage & Filesystem Tools
 gparted
 testdisk
-photorec
-ddrescue
 safecopy
 clonezilla
 partclone
@@ -79,8 +73,6 @@ okteta
 
 ## Hardware Testing
 memtest86+
-prime95
-unigine-heaven
 mesa-utils
 glmark2
 vulkan-tools
@@ -135,25 +127,21 @@ exfatprogs
 wimtools
 gddrescue
 testdisk
-photorec
 dcfldd
 
 ## Windows Registry & User Tools
-hivex
 libhivex-bin
 reglookup
 rifiuti2
 
 ## Windows Password & Security
 polenum
-enum4linux
 smbclient
 cifs-utils
 winbind
 samba-common-bin
 
 ## NTFS & Windows Filesystem Tools
-ntfsprogs
 ntfs-3g-dev
 dosfstools
 mtools
@@ -161,10 +149,8 @@ mtools
 ## Additional Utilities
 tree
 locate
-mlocate
 dlocate
 apt-file
 debsums
 reportbug
 screenfetch
-neofetch

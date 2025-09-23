@@ -1,156 +1,195 @@
-package main
+#!/bin/sh
+#
+# /usr/lib/live/boot/9991-overlayparser
+# Runs after live-boot's 9990-overlay. Attempts to inject an extra desktop
+# squashfs into the overlay by building a new overlay with the extra layer first,
+# then moving it into place.
+#
+# Heavy debug output and final 'read' so you can inspect what happened.
+#
 
-import (
-	"fmt"
-	"log"
-	"os"
-	"os/exec"
-	"path/filepath"
-)
-
-func run(name string, args ...string) {
-	cmd := exec.Command(name, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		log.Fatalf("command failed: %s %v: %v", name, args, err)
-	}
+# helper: bail to shell with message
+drop_shell() {
+    echo "[overlayparser] Dropping to shell for manual debugging..."
+    /bin/sh || true
+    exit 0
 }
 
-func writeFile(path, content string, perm os.FileMode) {
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		log.Fatal(err)
-	}
-	if err := os.WriteFile(path, []byte(content), perm); err != nil {
-		log.Fatalf("write %s: %v", path, err)
-	}
+echo "[overlayparser] ===== START 9991-overlayparser ====="
+sleep 1
+
+# show cmdline
+CMDLINE="$(cat /proc/cmdline 2>/dev/null || true)"
+echo "[overlayparser] cmdline: $CMDLINE"
+sleep 1
+
+# pick DE param
+DE_BASENAME=""
+case "$CMDLINE" in
+    *desktop=openbox*)
+        DE_BASENAME="openbox.squashfs"
+        DE_SUBPATH="minimal/openbox.squashfs"
+        ;;
+    *desktop=lxqt*)
+        DE_BASENAME="lxqt.squashfs"
+        DE_SUBPATH="medium/lxqt.squashfs"
+        ;;
+    *desktop=maximum*)
+        DE_BASENAME="maximum.squashfs"
+        DE_SUBPATH="maximum/maximum.squashfs"
+        ;;
+    *)
+        echo "[overlayparser] No desktop= kernel parameter; nothing to inject."
+        echo "[overlayparser] ===== END ====="
+        read dummy
+        exit 0
+        ;;
+esac
+
+echo "[overlayparser] Requested extra: $DE_SUBPATH ($DE_BASENAME)"
+sleep 1
+
+# Attempt to locate squashfs under the mounted medium
+DE_PATH=""
+# Prefer scanning under run/live/medium first, then fallback to whole FS search
+echo "[overlayparser] Scanning /run/live/medium for $DE_BASENAME ..."
+FOUND="$(find /run/live/medium -type f -name "$DE_BASENAME" 2>/dev/null | head -n1 || true)"
+if [ -n "$FOUND" ]; then
+    DE_PATH="$FOUND"
+    echo "[overlayparser] Found at: $DE_PATH"
+else
+    echo "[overlayparser] Not found under /run/live/medium; doing a wider search (this may be slow)..."
+    FOUND="$(find / -type f -name "$DE_BASENAME" 2>/dev/null | head -n1 || true)"
+    if [ -n "$FOUND" ]; then
+        DE_PATH="$FOUND"
+        echo "[overlayparser] Found (fallback) at: $DE_PATH"
+    fi
+fi
+
+if [ -z "$DE_PATH" ]; then
+    echo "[overlayparser] ERROR: Could not locate $DE_BASENAME anywhere."
+    echo "[overlayparser] /run/live/medium contents (short):"
+    ls -l /run/live/medium 2>/dev/null || echo "/run/live/medium not present"
+    echo "[overlayparser] All squashfs under /run/live/medium (if any):"
+    find /run/live/medium -name '*.squashfs' 2>/dev/null || true
+    sleep 2
+    echo "[overlayparser] Press ENTER to drop to shell and inspect, or Ctrl+C to continue boot."
+    read dummy
+    drop_shell
+fi
+
+sleep 1
+
+# mount the extra squashfs read-only to a known place
+EXTRA_MNT="/run/live/rootfs-extra"
+mkdir -p "$EXTRA_MNT"
+echo "[overlayparser] Mounting extra squashfs read-only at $EXTRA_MNT"
+mount -t squashfs -o loop,ro "$DE_PATH" "$EXTRA_MNT" 2>&1 || {
+    echo "[overlayparser] ERROR: mount of extra squashfs failed."
+    echo "mount output:"
+    mount | tail -n 20
+    sleep 2
+    drop_shell
 }
 
-func main() {
-	if len(os.Args) != 3 {
-		fmt.Fprintf(os.Stderr, "Usage: %s /path/to/live.iso /dev/sdX\n", os.Args[0])
-		os.Exit(1)
-	}
-	iso := os.Args[1]
-	dev := os.Args[2] // e.g. /dev/sdX
+echo "[overlayparser] Extra mounted. ls $EXTRA_MNT (short):"
+ls -l "$EXTRA_MNT" | sed -n '1,80p'
+sleep 1
 
-	// Safety checks
-	if _, err := os.Stat(iso); err != nil {
-		log.Fatalf("ISO not found: %v", err)
-	}
-	fi, err := os.Stat(dev)
-	if err != nil || (fi.Mode()&os.ModeDevice) == 0 {
-		log.Fatalf("Device not found or not a block device: %s", dev)
-	}
+# Locate existing overlay mount (we expect an overlay mount at /root)
+echo "[overlayparser] Locating current overlay mountpoint (searching for type overlay and mountpoint /root)..."
+# Look for a mount whose target is /root or whose fs type is overlay and may include /root
+OLD_MOUNT_LINE="$(grep ' /root ' /proc/self/mounts | grep overlay || true)"
+if [ -z "$OLD_MOUNT_LINE" ]; then
+    # try searching for any overlay mount and prefer /root fallback
+    OLD_MOUNT_LINE="$(grep ' overlay ' /proc/self/mounts || true)"
+fi
 
-	fmt.Printf("⚠️  This will ERASE ALL DATA on %s. Type YES to continue: ", dev)
-	var ans string
-	fmt.Scanln(&ans)
-	if ans != "YES" {
-		log.Fatal("aborted")
-	}
+echo "[overlayparser] mount lines relevant:"
+echo "$OLD_MOUNT_LINE"
+sleep 1
 
-	efiPart := dev + "1"
-	extPart := dev + "2"
+if [ -z "$OLD_MOUNT_LINE" ]; then
+    echo "[overlayparser] ERROR: Could not find an existing overlay mount line in /proc/self/mounts."
+    echo "[overlayparser] Current mounts:"
+    cat /proc/self/mounts
+    sleep 2
+    drop_shell
+fi
 
-	// 1) Wipe + partition (GPT: ESP 512MiB + ext4 rest)
-	run("wipefs", "-a", dev)
-	run("parted", "-s", dev, "mklabel", "gpt")
-	run("parted", "-s", dev, "mkpart", "EFI", "fat32", "1MiB", "512MiB")
-	run("parted", "-s", dev, "set", "1", "esp", "on")
-	run("parted", "-s", dev, "mkpart", "LIVE", "ext4", "512MiB", "100%")
-
-	// 2) Make filesystems
-	run("mkfs.vfat", "-F32", "-n", "EFI", efiPart)
-	run("mkfs.ext4", "-F", "-L", "LIVEUSB", extPart)
-
-	// 3) Mount points
-	isoMnt := "/mnt/iso"
-	efiMnt := "/mnt/usb-efi"
-	liveMnt := "/mnt/usb-live"
-	os.MkdirAll(isoMnt, 0755)
-	os.MkdirAll(efiMnt, 0755)
-	os.MkdirAll(liveMnt, 0755)
-
-	// 4) Mount ISO (ro), and target partitions
-	run("mount", "-o", "loop,ro", iso, isoMnt)
-	run("mount", extPart, liveMnt)
-	run("mount", efiPart, efiMnt)
-
-	// 5) Copy needed files from ISO to ext4:
-	//    - Kernel, initrd, live payload (squashfs), plus boot/grub themes if you want.
-	// You can copy the whole ISO tree if you prefer, but here is the minimal set:
-	run("rsync", "-aH", "--info=progress2", isoMnt+"/live/", liveMnt+"/live/")
-	// If you want GRUB themes/configs from the ISO (optional):
-	run("rsync", "-aH", isoMnt+"/boot/grub/", liveMnt+"/boot/grub/")
-
-	// 6) Install GRUB (BIOS -> MBR on disk; UEFI -> EFI System Partition)
-	run("grub-install", "--target=i386-pc", "--boot-directory="+liveMnt+"/boot", "--recheck", dev)
-	run("grub-install",
-		"--target=x86_64-efi",
-		"--efi-directory="+efiMnt,
-		"--boot-directory="+liveMnt+"/boot",
-		"--removable",
-		"--recheck",
-	)
-
-	// 7) Secure Boot (optional but recommended): copy shim + signed GRUB if available
-	// Paths are typical on Debian; adjust if your distro differs.
-	if _, err := os.Stat("/usr/lib/shim/shimx64.efi.signed"); err == nil {
-		run("mkdir", "-p", filepath.Join(efiMnt, "EFI", "BOOT"))
-		run("cp", "/usr/lib/shim/shimx64.efi.signed", filepath.Join(efiMnt, "EFI", "BOOT", "BOOTX64.EFI"))
-		// grubx64.efi.signed path may vary by distro; this is common on Debian/Ubuntu
-		if _, err := os.Stat("/usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed"); err == nil {
-			run("cp", "/usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed", filepath.Join(efiMnt, "EFI", "BOOT", "grubx64.efi"))
-		} else {
-			log.Printf("Signed GRUB not found; install grub-efi-amd64-signed for Secure Boot.")
-		}
-	} else {
-		log.Printf("shim-signed not found; install shim-signed for Secure Boot.")
-	}
-
-	// 8) GRUB configs
-	//    Stub on EFI FAT32 that points to the real config on ext4 (by label).
-	stubCfg := `search --no-floppy --set=root --label LIVEUSB
-configfile /boot/grub/grub.cfg
-`
-	writeFile(filepath.Join(efiMnt, "boot", "grub", "grub.cfg"), stubCfg, 0644)
-
-	//    Real config on ext4. Two entries show how to switch squashfs sets via live-media-path.
-	fullCfg := `set default=0
-set timeout=100
-
-insmod search_fs_label
-search --no-floppy --set=root --label SYSTEM
-
-menuentry "Debian Live (Default)" {
-    linux /live/vmlinuz boot=live quiet splash live-media-path=/live/default
-    initrd /live/initrd.img
+# Parse out lowerdir, upperdir and workdir from the mount options
+# The mount line looks like: overlay /root overlay rw,lowerdir=/a:/b,upperdir=/cow,workdir=/cow/.work 0 0
+MNT_OPTS="$(echo "$OLD_MOUNT_LINE" | awk '{print $4}')"
+echo "[overlayparser] mount options: $MNT_OPTS"
+# helper to extract opt
+getoptval() {
+    echo "$MNT_OPTS" | tr ',' '\n' | sed -n "s/^$1=//p" | head -n1
 }
 
-menuentry "Debian Live (Low RAM)" {
-    linux /live/vmlinuz boot=live quiet splash live-media-path=/live/lowram
-    initrd /live/initrd.img
+OLD_LOWERDIR="$(getoptval lowerdir)"
+OLD_UPPERDIR="$(getoptval upperdir)"
+OLD_WORKDIR="$(getoptval workdir)"
+
+echo "[overlayparser] parsed old lowerdir: $OLD_LOWERDIR"
+echo "[overlayparser] parsed old upperdir: $OLD_UPPERDIR"
+echo "[overlayparser] parsed old workdir: $OLD_WORKDIR"
+sleep 1
+
+if [ -z "$OLD_LOWERDIR" ] || [ -z "$OLD_UPPERDIR" ] || [ -z "$OLD_WORKDIR" ]; then
+    echo "[overlayparser] ERROR: could not parse required overlay options. Aborting."
+    echo "mount line:"
+    echo "$OLD_MOUNT_LINE"
+    sleep 2
+    drop_shell
+fi
+
+# Build new lowerdir string with extra first
+# NOTE: overlay lowerdir is colon-separated list. Prepend extra mount path.
+# The extra must present first so it appears on top.
+NEW_LOWERDIR="$EXTRA_MNT:$OLD_LOWERDIR"
+echo "[overlayparser] new lowerdir will be: $NEW_LOWERDIR"
+sleep 1
+
+# Create a new overlay mountpoint
+NEW_ROOT="/run/live/newroot"
+mkdir -p "$NEW_ROOT"
+echo "[overlayparser] Mounting new overlay at $NEW_ROOT ..."
+mount -t overlay overlay -o lowerdir="$NEW_LOWERDIR",upperdir="$OLD_UPPERDIR",workdir="$OLD_WORKDIR" "$NEW_ROOT" 2>&1 || {
+    echo "[overlayparser] ERROR: failed to mount new overlay at $NEW_ROOT"
+    echo "last mount output:"
+    mount | tail -n 40
+    sleep 2
+    drop_shell
 }
-`
-	writeFile(filepath.Join(liveMnt, "boot", "grub", "grub.cfg"), fullCfg, 0644)
 
-	// 9) Optional: create layout for multiple squashfs sets
-	_ = os.MkdirAll(filepath.Join(liveMnt, "live", "default"), 0755)
-	_ = os.MkdirAll(filepath.Join(liveMnt, "live", "lowram"), 0755)
-	// Move the copied filesystem.squashfs into default, if you want:
-	// run("mv", liveMnt+"/live/filesystem.squashfs", liveMnt+"/live/default/filesystem.squashfs")
-	// And you can add a shared overlay like /live/00-custom.squashfs that both entries will load.
+echo "[overlayparser] New overlay mounted at $NEW_ROOT. ls (short):"
+ls -l "$NEW_ROOT" | sed -n '1,80p'
+sleep 1
 
-	// 10) Cleanup
-	run("sync")
-	// unmount in reverse
-	_ = exec.Command("umount", efiMnt).Run()
-	_ = exec.Command("umount", liveMnt).Run()
-	_ = exec.Command("umount", isoMnt).Run()
-	_ = os.RemoveAll(efiMnt)
-	_ = os.RemoveAll(liveMnt)
-	_ = os.RemoveAll(isoMnt)
-
-	fmt.Println("✅ USB prepared: BIOS + UEFI (+ Secure Boot if shim/grub-signed present). Replace /live/* files freely.")
+# Now swap it into place. We try to move the mount over /root.
+echo "[overlayparser] Attempting to move new overlay into /root ..."
+# The mount --move moves the entire mount tree from NEW_ROOT to /root
+mount --move "$NEW_ROOT" /root 2>&1 || {
+    echo "[overlayparser] ERROR: mount --move failed."
+    echo "mounts:"
+    cat /proc/self/mounts | tail -n 40
+    sleep 2
+    echo "[overlayparser] You can inspect /run/live/newroot and /run/live/rootfs-extra, then press ENTER to drop to shell."
+    read dummy
+    drop_shell
 }
+
+echo "[overlayparser] Successfully moved new overlay into /root."
+echo "[overlayparser] Final /root listing (short):"
+ls -l /root | sed -n '1,80p'
+sleep 1
+
+echo "[overlayparser] ===== FINISHED ====="
+echo "Press ENTER to continue boot (or inspect with shell)..."
+read dummy
+
+# Optionally give you a shell after the pause for more inspection
+echo "[overlayparser] Opening shell for final inspection..."
+/bin/sh || true
+
+exit 0
