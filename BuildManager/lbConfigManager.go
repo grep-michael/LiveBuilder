@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
+
 	//"path/filepath"
 	"sync"
 	"text/template"
@@ -54,9 +56,16 @@ func (self *LBConfigManager) ConfigureLB() error {
 	err = executeCommand(lb_config_command, cmdOutChan)
 	close(cmdOutChan)
 	wg.Wait()
-
+	self.clearPackageList()
 	return err
 
+}
+
+func (self *LBConfigManager) clearPackageList() {
+	packageList := path.Join(self.buildPath, "config", "package-lists", "live.list.chroot")
+	err := os.Remove(packageList)
+	log.Printf("Removed premade package list %s\n", packageList)
+	log.Printf("%v\n", err)
 }
 
 func (self *LBConfigManager) transformToLogUpdate(cmdout CommandOut) LogUpdate {

@@ -115,3 +115,4 @@ log_msg "[extrafs] Successfully moved new overlay into /root."
 log_msg "[extrafs] Final /root listing (short):"
 ls -l /root | sed -n '1,80p'
 log_msg "[extrafs] END"
+read dummy
