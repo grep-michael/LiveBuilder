@@ -40,7 +40,6 @@ Each custom file should include a .meta.json to specify where it should be posit
 - [Debian Live Project](https://www.debian.org/devel/debian-live/) for the live-build framework
 - [fyne](https://fyne.io/) Fyne gui
 - [Go Community](https://golang.org/) for the excellent programming language
-- All contributors who have helped improve this project
 
 ## 📚 Additional Resources
 
