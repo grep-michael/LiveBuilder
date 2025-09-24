@@ -32,7 +32,7 @@ sudo mv livebuilder /usr/local/bin/
 
 ## Customizing
 
-Custom files are in ~/.config/LiveBuilder/CustomFiles
+Custom files are in ~/.config/LiveBuilder/CustomFiles <br>
 Each custom file should include a .meta.json to specify where it should be position in the live-build structure and to tag it
 
 ## 🙏 Acknowledgments
