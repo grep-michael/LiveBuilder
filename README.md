@@ -46,8 +46,6 @@ Each custom file should include a .meta.json to specify where it should be posit
 
 - [Debian Live Manual](https://live-team.pages.debian.net/live-manual/html/live-manual/index.en.html)
 - [live-build Documentation](https://manpages.debian.org/testing/live-build/live-build.7.en.html)
-- [Go Documentation](https://golang.org/doc/)
-- [Debian Package Management](https://www.debian.org/doc/manuals/debian-reference/ch02.en.html)
 
 ---
 
