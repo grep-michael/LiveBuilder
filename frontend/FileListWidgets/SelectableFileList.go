@@ -191,7 +191,7 @@ func (self *FileListContainer) buildFileList() *widget.List {
 
 func (self *FileListContainer) buildFileContentView() *container.Split {
 	scroll := container.NewScroll(self.fileView)
-	scroll.SetMinSize(fyne.NewSize(200, 400))
+	scroll.SetMinSize(fyne.NewSize(0, 400))
 
 	vbox := container.NewVSplit(
 		self.fileViewHeader,

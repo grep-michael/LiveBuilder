@@ -17,12 +17,13 @@ log_msg() {
 log_msg "[extrafs] START"
 
 CMDLINE="$(cat /proc/cmdline)"
-
+log_msg "[extrafs] $CMDLINE"
 # Extract extrafs= parameter (colon-separated list)
 EXTRAFS="$(log_msg "$CMDLINE" | sed -n 's/.*extrafs=\([^ ]*\).*/\1/p')"
 
 if [ -z "$EXTRAFS" ]; then
     log_msg "[extrafs] No extrafs= found on kernel cmdline"
+    /bin/sh
     exit 0
 fi
 
@@ -115,4 +116,3 @@ log_msg "[extrafs] Successfully moved new overlay into /root."
 log_msg "[extrafs] Final /root listing (short):"
 ls -l /root | sed -n '1,80p'
 log_msg "[extrafs] END"
-read dummy
