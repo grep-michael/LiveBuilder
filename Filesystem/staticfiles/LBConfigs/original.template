@@ -1,4 +1,5 @@
 lb config --apt apt \
+    --distribution bookworm \
     --cache true \
     --cache-packages true \
     --cache-stages "bootstrap,chroot" \

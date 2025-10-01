@@ -48,3 +48,5 @@ init
 systemd
 systemd-sysv
 udev
+mdadm
+dmraid

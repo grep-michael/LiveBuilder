@@ -1,0 +1,8 @@
+{
+  "install_path": "config/hooks/live/0010-add-oldstable-repo.hook.chroot",
+  "tags": [
+    "fixes"
+  ],
+  "description": "add bookworm packages to apt",
+  "file_type": "config"
+}

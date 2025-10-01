@@ -1,0 +1,8 @@
+{
+    "install_path": "config/hooks/live/0005-load-storage-drivers.hook.chroot",
+    "tags": [
+      "fixes"
+    ],
+    "description": "force storage drivers into initramfs",
+    "file_type": "config"
+  }
