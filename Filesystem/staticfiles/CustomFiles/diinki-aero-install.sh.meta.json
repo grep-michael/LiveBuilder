@@ -1,0 +1,8 @@
+{
+  "install_path": "config/hooks/normal/0000-diinki-aero-setup.hook.chroot",
+  "tags": [
+    "setup"
+  ],
+  "description": "script to install diinki aero configs",
+  "file_type": ""
+}

@@ -91,11 +91,11 @@ func extractEmbeddedFiles(targetDir string) error {
 		// Create the full target path
 		targetPath := filepath.Join(targetDir, relativePath)
 
-		if _, err := os.Stat(targetPath); err == nil {
-			//if file exists continue past this file
-			log.Printf("Skipping file %s\n", targetPath)
-			return nil
-		}
+		//if _, err := os.Stat(targetPath); err == nil {
+		//	//if file exists continue past this file
+		//	log.Printf("Skipping file %s\n", targetPath)
+		//	return nil
+		//}
 
 		if d.IsDir() {
 			// Create directory

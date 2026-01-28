@@ -1,0 +1,8 @@
+{
+  "install_path": "/",
+  "tags": [
+    "basic"
+  ],
+  "description": "ext4 filesystem",
+  "file_type": "config"
+}

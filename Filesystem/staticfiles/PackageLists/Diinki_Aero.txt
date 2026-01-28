@@ -1,0 +1,15 @@
+caja
+waybar
+wofi
+kitty
+libgtk-3-dev
+libgtk-layer-shell-dev
+libpango1.0-dev
+libgdk-pixbuf-2.0-dev
+libdbusmenu-gtk3-dev
+libcairo2-dev
+libglib2.0-dev
+build-essential
+git
+curl
+sudo
