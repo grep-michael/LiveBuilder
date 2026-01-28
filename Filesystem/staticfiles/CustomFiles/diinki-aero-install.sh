@@ -25,5 +25,5 @@ cd ~
 git clone https://github.com/JaKooLit/Debian-Hyprland.git
 cd Debian-Hyprland
 chmod +x install.sh
-yes | ./install.sh
+echo -e "y\n" | ./install.sh
 EOF
