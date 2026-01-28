@@ -15,8 +15,19 @@ Before using LiveBuilder, ensure you have the following installed:
 
 ```bash
 sudo apt update
-sudo apt install live-build debootstrap squashfs-tools xorriso isolinux syslinux-efi grub-pc-bin grub-efi-amd64-bin mtools
+sudo apt install live-build debootstrap squashfs-tools xorriso isolinux syslinux-efi grub-pc-bin grub-efi-amd64-bin mtools 
 ```
+#### arm packages
+```bash
+sudo apt install -y \
+    qemu-user-static \
+    binfmt-support \
+    debootstrap \
+    live-build
+sudo dpkg --add-architecture arm64 
+sudo update-binfmts --enable qemu-aarch64
+```
+
 
 ## 🔧 Installation
 
@@ -49,3 +60,5 @@ Each custom file should include a .meta.json to specify where it should be posit
 ---
 
 **Keywords**: debian, live-build, iso, golang, custom-debian, live-system, debian-live, iso-builder, linux-distribution, bootable-iso, debian-customization, live-cd, live-usb
+
+
