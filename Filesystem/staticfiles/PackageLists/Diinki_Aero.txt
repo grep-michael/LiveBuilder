@@ -1,3 +1,9 @@
+libglib2.0-dev
+libgtk-3-0t64
+pkg-config
+libatk1.0-dev
+libgdk-pixbuf-2.0-dev
+libpango1.0-dev
 caja
 waybar
 wofi
