@@ -1,0 +1,8 @@
+{
+    "install_path": "config/hooks/normal/0000-kisok-setup.hook.chroot",
+    "tags": [
+      "kiosk"
+    ],
+    "description": "attempts to configure the os to be a web kisok,",
+    "file_type": "config"
+  }

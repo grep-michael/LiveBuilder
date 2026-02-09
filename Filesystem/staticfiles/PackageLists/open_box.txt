@@ -1,0 +1,11 @@
+xserver-xorg-core
+xserver-xorg-input-libinput
+xserver-xorg-video-fbdev
+xinit
+x11-xserver-utils
+openbox
+obconf
+lightdm
+fonts-dejavu-core
+xterm
+dbus-x11
